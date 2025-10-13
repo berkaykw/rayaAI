@@ -1,6 +1,6 @@
 import 'dart:ui'; // ImageFiltered için gerekli
 import 'package:flutter/material.dart';
-import 'package:raya_ai/screens/analysis_screen.dart';
+import 'package:raya_ai/screens/loginpage_screen.dart';
 
 // Tasarımda kullanılan renkleri sabit olarak tanımlayalım
 const Color primaryColor = Color(0xFFEC1380);
@@ -142,7 +142,7 @@ class _WelcomepageScreenState extends State<WelcomepageScreen> {
         onPressed: () {
            Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AnalysisScreen()),
+      MaterialPageRoute(builder: (context) => const LoginpageScreen()),
     );
         },
         style: ElevatedButton.styleFrom(

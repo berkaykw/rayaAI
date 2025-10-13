@@ -2,10 +2,12 @@ import 'dart:ui';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:raya_ai/screens/profilepage_screen.dart';
 import 'package:raya_ai/widgets/glass_bottom_navbar.dart';
 import '../services/api_service.dart';
 import '../models/analysis_model.dart';
 import 'package:raya_ai/widgets/full_screen_image_viewer.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -18,19 +20,29 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   int _selectedIndex = 1;
   final ApiService _apiService = ApiService();
   final TextEditingController _urlController = TextEditingController();
-  final ImagePicker _picker = ImagePicker(); // EKLE
+  final ImagePicker _picker = ImagePicker();
+
+  late String userName;
 
   String? _statusMessage;
   List<AnalysisSection>? _analysisResult;
   bool _isLoading = false;
   String? _imageUrlForDisplay;
-  File? _selectedImageFile; // Seçilen resmi saklamak için
+  File? _selectedImageFile;
 
   @override
   void initState() {
     super.initState();
     _urlController.addListener(() {
       setState(() {});
+    });
+    _loadUserName();
+  }
+
+  void _loadUserName() {
+    final user = Supabase.instance.client.auth.currentUser;
+    setState(() {
+      userName = user?.userMetadata?['user_name'];
     });
   }
 
@@ -125,78 +137,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      endDrawer: Drawer(
-        backgroundColor: Colors.black87,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: const Text(
-                  'RAYA AI',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const Divider(color: Colors.white24),
-
-              ListTile(
-                leading: const Icon(Icons.account_circle_outlined, color: Colors.pinkAccent),
-                title: const Text(
-                  'Profil',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Driver durumu ekranına yönlendirme
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.settings, color: Colors.pinkAccent),
-                title: const Text(
-                  'Ayarlar',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Driver ayarları ekranına yönlendirme
-                },
-              ),
-
-              ListTile(
-                leading: const Icon(Icons.history, color: Colors.pinkAccent),
-                title: const Text(
-                  'Analiz Geçmişi',
-                  style: TextStyle(color: Colors.white),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Driver geçmiş ekranına yönlendirme
-                },
-              ),
-
-              const Spacer(),
-
-              ListTile(
-                leading: const Icon(Icons.logout, color: Colors.redAccent),
-                title: const Text(
-                  'Çıkış',
-                  style: TextStyle(color: Colors.redAccent),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Çıkış işlemi
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -209,16 +149,37 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           children: [
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.all(15.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            Text(
+                              userName ?? '******',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                height: 1.2,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    offset: const Offset(0, 1),
+                                    blurRadius: 2,
+                                    color: Colors.black.withOpacity(0.15),
+                                  ),
+                                  Shadow(
+                                    offset: const Offset(0, 4),
+                                    blurRadius: 12,
+                                    color: Colors.black.withOpacity(0.25),
+                                  ),
+                                ],
+                              ),
+                            ),
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.1),
@@ -229,62 +190,43 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                 ),
                               ),
                               child: IconButton(
-                                onPressed: () {},
-                                icon: Icon(Icons.auto_awesome),
-                                iconSize: 22,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              'Raya AI',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Builder(
-                                builder:
-                                    (context) => IconButton(
-                                      onPressed: () {
-                                        Scaffold.of(
-                                          context,
-                                        ).openEndDrawer(); // Soldan drawer aç
-                                      },
-                                      icon: const Icon(Icons.menu_rounded),
-                                      iconSize: 22,
-                                      color: Colors.white,
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => ProfileScreen(),
                                     ),
+                                  );
+                                },
+                                icon: const Icon(Icons.person_outline_rounded),
+                                iconSize: 25,
+                                color: Colors.white,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      if (!_isLoading && _statusMessage == null && _analysisResult == null)
+                      if (!_isLoading &&
+                          _statusMessage == null &&
+                          _analysisResult == null)
                         Column(
                           children: [
                             _buildCenterText(),
                             const SizedBox(height: 40),
                           ],
                         ),
-                        if (!_isLoading && _statusMessage == null && _analysisResult == null)
+                      if (!_isLoading &&
+                          _statusMessage == null &&
+                          _analysisResult == null)
                         Column(
                           children: [
                             _buildButtonCamera(),
                             const SizedBox(height: 20),
                           ],
                         ),
-                      if (!_isLoading && _statusMessage == null && _analysisResult == null)
+                      if (!_isLoading &&
+                          _statusMessage == null &&
+                          _analysisResult == null)
                         Column(
                           children: [
                             _buildButtonGalery(),
@@ -292,9 +234,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                           ],
                         ),
                       _buildBody(),
-                      SizedBox(height: 200,),
-                      if (_isLoading && _statusMessage == null && _analysisResult == null)
-                        SizedBox(height: 300,),
+                      SizedBox(height: 200),
+                      if (_isLoading &&
+                          _statusMessage == null &&
+                          _analysisResult == null)
+                        SizedBox(height: 300),
                     ],
                   ),
                 ),
@@ -317,23 +261,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return Column(
-        children: [
-          SizedBox(height: 250,),
-          _buildLoadingState(),
-        ],
-      );
+      return Column(children: [SizedBox(height: 250), _buildLoadingState()]);
     } else if (_statusMessage != null) {
       return _buildErrorState();
     } else if (_analysisResult != null) {
       return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildResultsSection(),
-        _buildAnalyzeAgainButton(),
-      ],
-    );
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [_buildResultsSection(), _buildAnalyzeAgainButton()],
+      );
     } else {
       return _buildTipsCarousel();
     }
@@ -413,15 +349,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       children: [
         const Row(
           children: [
-            Icon(Icons.lightbulb_outline,color: Colors.white,),
+            Icon(Icons.lightbulb_outline, color: Colors.white),
             Text(
-          'Doğru Analiz İçin İpuçları',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+              'Doğru Analiz İçin İpuçları',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 10),
@@ -659,49 +595,53 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return Column(
       children: [
         Container(
-                        padding: const EdgeInsets.all(30),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: [Colors.pink, Colors.pink[300]!],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.pink.withOpacity(0.5),
-                              blurRadius: 25,
-                              spreadRadius: 5,
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.face_retouching_natural,
-                          size: 80,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      Text(
-                        'Cilt Analizine Başla',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          'Cildinin özelliklerini keşfetmek için\nfotoğraf çek veya galeriden seç',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 15,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-      ],     
+          padding: EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withOpacity(0.2),
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+              // Orta katman neon
+              BoxShadow(
+                color: Colors.white.withOpacity(1),
+                blurRadius: 10,
+                spreadRadius: 5,
+              ),
+              BoxShadow(
+                color: Colors.white.withOpacity(0.5),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: Image.asset("assets/images/logo.png", width: 200),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Cilt Analizine Başla',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Text(
+            'Cildinin özelliklerini keşfetmek için\nfotoğraf çek veya galeriden seç',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 15,
+              height: 1.5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -711,11 +651,20 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       child: ElevatedButton.icon(
         onPressed: _resetState,
         icon: const Icon(Icons.refresh, color: Colors.white),
-        label: const Text('Tekrar Analiz Yap', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+        label: const Text(
+          'Tekrar Analiz Yap',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 15),
           backgroundColor: Colors.pink,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
