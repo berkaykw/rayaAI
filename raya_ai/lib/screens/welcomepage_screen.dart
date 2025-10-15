@@ -1,11 +1,13 @@
-import 'dart:ui'; // ImageFiltered için gerekli
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
+import 'package:raya_ai/screens/analysis_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Tasarımda kullanılan renkleri sabit olarak tanımlayalım
 const Color primaryColor = Color(0xFFEC1380);
 const Color backgroundDarkColor = Color(0xFF221019);
-const Color textColor = Color(0xFFD4D4D8); // Tailwind'deki zinc-300 rengine yakın
+const Color textColor = Color(0xFFD4D4D8);
 
 class WelcomepageScreen extends StatefulWidget {
   const WelcomepageScreen({super.key});
@@ -15,72 +17,100 @@ class WelcomepageScreen extends StatefulWidget {
 }
 
 class _WelcomepageScreenState extends State<WelcomepageScreen> {
+  bool _checkingSession = true; // ✅ kontrol yapılıyor mu?
+
+  final supabase = Supabase.instance.client;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAutoLogin();
+  }
+
+  Future<void> _checkAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final remember = prefs.getBool('rememberMe') ?? false;
+
+    final session = supabase.auth.currentSession;
+
+    if (remember && session != null) {
+      // ✅ Giriş yapılmış → direkt AnalysisScreen'e yönlendir
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AnalysisScreen()),
+      );
+    } else {
+      // ⏳ Kontrol bitti → Welcome ekranı göster
+      setState(() {
+        _checkingSession = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundDarkColor,
       body: Stack(
-        // Stack, widget'ları üst üste koymamızı sağlar
         children: [
-          // Arka plandaki bulanık daireler
           _buildBlurredBlobs(),
 
-          // Ortalanmış ana içerik
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Başlık: "Cilt Analizi"
-                  const Text(
-                    'Cildinizi Keşfedin',
-                    style: TextStyle(
-                      fontFamily: 'Inter', // Manuel eklenen font ailesi
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10.0,
-                          color: Colors.black38,
-                          offset: Offset(2.0, 2.0),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Açıklama metni
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 320), // max-w-sm
-                    child: Text(
-                      'Cilt sağlığınızı analiz etmek ve kişiselleştirilmiş öneriler almak için bir fotoğraf yükleyin veya çekin.',
-                      textAlign: TextAlign.center,
+          // Eğer kontrol yapılıyorsa loading spinner göster
+          if (_checkingSession)
+            const Center(
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
+            )
+          else
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Cildinizi Keşfedin',
                       style: TextStyle(
-                        fontFamily: 'Inter', // Manuel eklenen font ailesi
-                        fontSize: 16,
-                        color: textColor,
-                        height: 1.5,
+                        fontFamily: 'Inter',
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 10.0,
+                            color: Colors.black38,
+                            offset: Offset(2.0, 2.0),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 48),
-
-                  // "Başla" düğmesi
-                  _buildStartButton(),
-                ],
+                    const SizedBox(height: 16),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 320),
+                      child: const Text(
+                        'Cilt sağlığınızı analiz etmek ve kişiselleştirilmiş öneriler almak için bir fotoğraf yükleyin veya çekin.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 16,
+                          color: textColor,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    _buildStartButton(),
+                  ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  /// Arka plandaki bulanık renk damlalarını oluşturan widget.
   Widget _buildBlurredBlobs() {
-    // State class içinde olduğumuz için 'context'e doğrudan erişebiliriz.
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -106,7 +136,6 @@ class _WelcomepageScreenState extends State<WelcomepageScreen> {
     );
   }
 
-  /// Belirtilen boyut ve renkte bulanık bir daire oluşturan yardımcı widget.
   Widget _buildBlurCircle({required double size, required Color color}) {
     return ImageFiltered(
       imageFilter: ImageFilter.blur(sigmaX: 50, sigmaY: 50),
@@ -121,7 +150,6 @@ class _WelcomepageScreenState extends State<WelcomepageScreen> {
     );
   }
 
-  /// Tasarıma uygun stillendirilmiş "Başla" düğmesini oluşturan widget.
   Widget _buildStartButton() {
     return Container(
       decoration: BoxDecoration(
@@ -140,10 +168,10 @@ class _WelcomepageScreenState extends State<WelcomepageScreen> {
       ),
       child: ElevatedButton(
         onPressed: () {
-           Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginpageScreen()),
-    );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const LoginpageScreen()),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -155,7 +183,7 @@ class _WelcomepageScreenState extends State<WelcomepageScreen> {
         child: const Text(
           'Başla',
           style: TextStyle(
-            fontFamily: 'Inter', // Manuel eklenen font ailesi
+            fontFamily: 'Inter',
             fontSize: 18,
             fontWeight: FontWeight.w900,
           ),

@@ -1,6 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+ import 'package:intl/intl.dart';
+
 import 'package:flutter/material.dart';
+import 'package:raya_ai/models/analysis_model.dart';
+import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -11,7 +18,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final supabase = Supabase.instance.client;
-  
+
   String? userName;
   String? userEmail;
   bool isLoading = true;
@@ -41,44 +48,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
-    try {
-      await supabase.auth.signOut();
-      if (mounted) {
-        Navigator.pushReplacement(
-  context,
-  MaterialPageRoute(builder: (context) => LoginpageScreen()),
-);
-      }
-    } catch (e) {
-      _showError('Sign out failed: $e');
+  try {
+    // 1️⃣ Supabase oturumunu kapat
+    await supabase.auth.signOut();
+
+    // 2️⃣ Remember Me bilgisini temizle
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('rememberMe');
+
+    // 3️⃣ Login ekranına yönlendir
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginpageScreen()),
+      );
     }
+  } catch (e) {
+    _showError('Çıkış yapılamadı: $e');
   }
+}
 
   Future<void> _deleteAccount() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF2A2A2A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Delete Account',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'Are you sure you want to delete your account? This action cannot be undone.',
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Color(0xFF2A2A2A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Delete Account',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete your account? This action cannot be undone.',
+              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Delete', style: TextStyle(color: Colors.red)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
     );
 
     if (confirm == true) {
@@ -96,10 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Center(
-          child: Text(
-            message,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          child: Text(message, style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         backgroundColor: Colors.red,
         duration: Duration(seconds: 3),
@@ -114,10 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Center(
-          child: Text(
-            message,
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+          child: Text(message, style: TextStyle(fontWeight: FontWeight.bold)),
         ),
         backgroundColor: Colors.greenAccent[400],
         duration: Duration(seconds: 3),
@@ -139,92 +153,235 @@ class _ProfileScreenState extends State<ProfileScreen> {
             colors: [Colors.grey[900]!, Colors.black],
           ),
         ),
-        child: isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: Colors.pink),
-              )
-            : SafeArea(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 20),
-                        
-                        // Profile Header
-                        _buildProfileHeader(),
-                        
-                        SizedBox(height: 40),
-                        
-                        // Profile Options
-                        _buildProfileOption(
-                          icon: Icons.person_outline,
-                          title: 'Edit Profile',
-                          onTap: () {
-                            // Navigate to edit profile
-                          },
-                        ),
-                        
-                        SizedBox(height: 12),
-                        
-                        _buildProfileOption(
-                          icon: Icons.notifications_outlined,
-                          title: 'Notifications',
-                          trailing: Switch(
-                            value: true,
-                            onChanged: (value) {},
-                            activeColor: Colors.pink,
+        child:
+            isLoading
+                ? Center(child: CircularProgressIndicator(color: Colors.pink))
+                : SafeArea(
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 20,
+                      ),
+                      child: Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white70,
+                                size: 22,
+                              ),
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AnalysisScreen(),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                        
-                        SizedBox(height: 12),
-                        
-                        _buildProfileOption(
-                          icon: Icons.lock_outline,
-                          title: 'Privacy & Security',
-                          onTap: () {},
-                        ),
-                        
-                        SizedBox(height: 12),
-                        
-                        _buildProfileOption(
-                          icon: Icons.help_outline,
-                          title: 'Help & Support',
-                          onTap: () {},
-                        ),
-                        
-                        SizedBox(height: 12),
-                        
-                        _buildProfileOption(
-                          icon: Icons.info_outline,
-                          title: 'About',
-                          onTap: () {},
-                        ),
-                        
-                        SizedBox(height: 30),
-                        
-                        // Logout Button
-                        _buildActionButton(
-                          text: 'Logout',
-                          color: Colors.pink,
-                          onPressed: _signOut,
-                        ),
-                        
-                        SizedBox(height: 12),
-                        
-                        // Delete Account Button
-                        _buildActionButton(
-                          text: 'Delete Account',
-                          color: Colors.red.withOpacity(0.8),
-                          onPressed: _deleteAccount,
-                        ),
-                        
-                        SizedBox(height: 20),
-                      ],
+                          // Profile Header
+                          _buildProfileHeader(),
+
+                          SizedBox(height: 40),
+
+                          // Profile Options
+                          _buildProfileOption(
+  icon: Icons.person_outline,
+  title: "Ad Değiştir",
+  onTap: () {
+    TextEditingController _nameController = TextEditingController(text: userName);
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Color(0xFF2A2A2A),
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Color(0xFF2A2A2A),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "İsmini Değiştir",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white, // Sabit renk
+                  ),
+                ),
+                const SizedBox(height: 15),
+                TextField(
+                  controller: _nameController,
+                  style: TextStyle(
+                     color: Colors.white, // Yazı rengi
+                     fontSize: 16,
+                    ),
+                  decoration: InputDecoration(
+                    hintText: "Yeni isim girin",
+                    filled: true,
+                    fillColor: Colors.black54, // Sabit renk
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 16,
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        "İptal",
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton(
+                      onPressed: () async {
+  final newName = _nameController.text.trim();
+  final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
+
+  if (newName.isNotEmpty && user != null) {
+    try {
+      // 1. ADIM: Authentication meta verisini güncelle
+      await supabase.auth.updateUser(
+        UserAttributes(
+          data: {'user_name': newName},
+        ),
+      );
+
+      // 2. ADIM: "profiles" tablosundaki veriyi güncelle
+      await supabase
+          .from('profiles')
+          .update({'user_name': newName})
+          .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
+
+      if (mounted) {
+        setState(() {
+          userName = newName;
+        });
+        Navigator.of(context).pop();
+        _showSuccess('İsim başarıyla güncellendi');
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        _showError('İsim güncellenemedi: $e');
+      }
+    }
+  }
+},
+
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.greenAccent[400],
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: Text(
+                        "Kaydet",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  },),
+
+
+                          SizedBox(height: 12),
+
+                          _buildProfileOption(
+                            icon: Icons.history,
+                            title: 'Geçmiş Analizler',
+                            onTap: () {},
+                          ),
+  
+
+                          SizedBox(height: 12),
+
+                          _buildProfileOption(
+                            icon: Icons.lock_outline,
+                            title: 'Privacy & Security',
+                            onTap: () {},
+                          ),
+
+                          SizedBox(height: 12),
+
+                          _buildProfileOption(
+                            icon: Icons.help_outline,
+                            title: 'Help & Support',
+                            onTap: () {},
+                          ),
+
+                          SizedBox(height: 12),
+
+                          _buildProfileOption(
+                            icon: Icons.info_outline,
+                            title: 'About',
+                            onTap: () {},
+                          ),
+
+                          SizedBox(height: 30),
+
+                          // Logout Button
+                          _buildActionButton(
+                            text: 'Çıkış Yap',
+                            color: Colors.grey[900]!,
+                            onPressed: _signOut,
+                          ),
+
+                          SizedBox(height: 12),
+
+                          // Delete Account Button
+                          _buildActionButton(
+                            text: 'Hesabı Sil',
+                            color: Colors.redAccent[700]!.withOpacity(0.65),
+                            onPressed: _deleteAccount,
+                          ),
+
+                          SizedBox(height: 20),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
       ),
     );
   }
@@ -248,7 +405,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               gradient: LinearGradient(
                 colors: [Colors.pink, Colors.pinkAccent],
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.2), width: 3),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 3,
+              ),
             ),
             child: Center(
               child: Text(
@@ -263,9 +423,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
-          
+
           SizedBox(height: 16),
-          
+
           // User Name
           Text(
             userName ?? '******',
@@ -289,9 +449,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
-          
+
           SizedBox(height: 6),
-          
+
           // User Email
           Text(
             userEmail ?? 'email@example.com',
@@ -327,11 +487,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  color: Colors.white.withOpacity(0.8),
-                  size: 24,
-                ),
+                Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
                 SizedBox(width: 16),
                 Expanded(
                   child: Text(
@@ -377,12 +533,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Text(
           text,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
+ 
+
 }

@@ -110,34 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo icon
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                primaryColor.withOpacity(0.8),
-                                primaryColor.withOpacity(0.4),
-                              ],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: primaryColor.withOpacity(0.5),
-                                blurRadius: 40,
-                                spreadRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.face_retouching_natural,
-                            size: 60,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
+                        Image.asset("assets/images/logo1.png", width: 170),               
                         // Uygulama adı
                         const Text(
                           'Raya AI',

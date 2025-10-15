@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginpageScreen extends StatefulWidget {
   const LoginpageScreen({Key? key}) : super(key: key);
@@ -23,6 +24,12 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   final supabase = Supabase.instance.client;
 
   @override
+void initState() {
+  super.initState();
+  _checkRememberMe();
+}
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -40,12 +47,12 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
 
   // ✅ Yazım hatası düzeltildi (mantıksal OR eklendi)
   if (email.isEmpty || password.isEmpty || name.isEmpty) {
-    _showError('Please fill all fields');
+    _showError('Lütfen tüm alanları doldurun');
     return;
   }
 
   if (password != confirmPassword) {
-    _showError('Passwords do not match');
+    _showError('Şifreler eşleşmiyor');
     return;
   }
 
@@ -61,19 +68,18 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
 
     if (mounted) {
       _showSuccess(
-        'Account created successfully! Please check your email to confirm.',
+        'Kayıt Başarılı! Lütfen e-posta adresinizi doğrulayın.',
       );
       // İstersen burada yönlendirme yapabilirsin
       // Navigator.of(context).pushReplacementNamed('/home');
     }
 
   } on AuthException catch (e) {
-    _showError('Sign up failed: ${e.message}');
+    _showError('Kayıt Başarısız: ${e.message}');
   } catch (e) {
     _showError('An unexpected error occurred: $e');
   }
 }
-
 
   // ✅ Giriş Yapma Fonksiyonu
   Future<bool> _signIn() async {
@@ -81,7 +87,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showError('Please fill all fields');
+      _showError('Lütfen tüm alanları doldurun');
       return false; // ❗ başarısız
     }
 
@@ -92,18 +98,36 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
       );
 
       if (response.user != null) {
-        _showSuccess('Logged in successfully!');
-        return true; // ✅ başarılı giriş
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('rememberMe', rememberMe); // ✅ remember kaydı
+        _showSuccess('Giriş Başarılı!');
+        return true;
       } else {
         _showError('Invalid credentials');
         return false;
       }
     } catch (e) {
-      _showError('Login failed: $e');
+      _showError('Giriş Başarısız');
       return false;
     }
   }
 
+  // ✅ Beni Hatırla Fonksiyonu
+  Future<void> _checkRememberMe() async {
+  final prefs = await SharedPreferences.getInstance();
+  final savedRemember = prefs.getBool('rememberMe') ?? false;
+
+  if (savedRemember) {
+    final session = supabase.auth.currentSession;
+    if (session != null) {
+      // Kullanıcı zaten giriş yapmış → AnalysisScreen’e yönlendir
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AnalysisScreen()),
+      );
+    }
+  }
+}
   // ✅ Şifre Sıfırlama (E-mail linki gönderir)
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
@@ -180,13 +204,25 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                     SizedBox(height: 50),
                     Text(
                       isLogin
-                          ? 'Sign Up or Log In to\nBuild Habits'
-                          : 'Sign Up, Track Your\nProgress Daily!',
+                          ? 'Hesabınıza Giriş Yapın'
+                          : 'Yeni Hesap Oluşturun',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
+                        height: 1.3,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      isLogin
+                          ? 'Kişisel Bakım Asistanın \n Seni Bekliyor'
+                          : 'Kişiselleştirilmiş Bakım Dünyasına\nAdım At',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 15,
                         height: 1.3,
                       ),
                     ),
@@ -239,7 +275,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                   color: Colors.transparent,
                                   child: Center(
                                     child: Text(
-                                      'Login',
+                                      'Giriş Yap',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -261,7 +297,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                   color: Colors.transparent,
                                   child: Center(
                                     child: Text(
-                                      'Sign up',
+                                      'Kayıt Ol',
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -286,7 +322,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
               if (!isLogin) ...[
                 _buildTextField(
                   controller: _nameController,
-                  hint: 'Name',
+                  hint: 'Ad',
                   icon: Icons.person_outline,
                 ),
                 SizedBox(height: 16),
@@ -294,7 +330,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
 
               _buildTextField(
                 controller: _emailController,
-                hint: 'Email Address',
+                hint: 'Email',
                 icon: Icons.email_outlined,
               ),
 
@@ -302,7 +338,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
 
               _buildTextField(
                 controller: _passwordController,
-                hint: 'Password',
+                hint: 'Şifre',
                 icon: Icons.lock_outline,
                 isPassword: true,
                 obscureText: _obscurePassword,
@@ -317,7 +353,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                 SizedBox(height: 16),
                 _buildTextField(
                   controller: _confirmPasswordController,
-                  hint: 'Confirm Password',
+                  hint: 'Şifreyi Onayla',
                   icon: Icons.lock_outline,
                   isPassword: true,
                   obscureText: _obscureConfirmPassword,
@@ -358,14 +394,14 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                   ? Icon(
                                     Icons.check,
                                     size: 14,
-                                    color: Color(0xFFCDFF00),
+                                    color: Colors.pink,
                                   )
                                   : null,
                         ),
                       ),
                       SizedBox(width: 8),
                       Text(
-                        'Remember me',
+                        'Beni Hatırla',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 14,
@@ -382,7 +418,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: Text(
-                        'Forgot password?',
+                        'Şifremi Unuttum',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.7),
                           fontSize: 14,
@@ -423,7 +459,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                     elevation: 0,
                   ),
                   child: Text(
-                    isLogin ? 'Login' : 'Sign up',
+                    isLogin ? 'Giriş Yap' : 'Kayıt Ol',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -455,7 +491,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Don't have an account? ",
+                      isLogin ? 'Hesabın yok mu? ' : 'Zaten bir hesabın var mı? ',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
@@ -468,7 +504,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                         });
                       },
                       child: Text(
-                        isLogin ? 'Create an account' : 'Login',
+                        isLogin ? 'Kayıt Ol' : 'Giriş Yap',
                         style: TextStyle(
                           color: Colors.pink,
                           fontSize: 14,

@@ -133,6 +133,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     });
   }
 
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Center(
+          child: Text(
+            message,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        backgroundColor: Colors.greenAccent[400],
+        duration: Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -263,12 +281,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     if (_isLoading) {
       return Column(children: [SizedBox(height: 250), _buildLoadingState()]);
     } else if (_statusMessage != null) {
-      return _buildErrorState();
+      return Column(children: [SizedBox(height: 50,), _buildErrorState(),SizedBox(height: 20,),_buildAnalyzeAgainButton() ,SizedBox(height: 250)]);
     } else if (_analysisResult != null) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [_buildResultsSection(), _buildAnalyzeAgainButton()],
+        children: [_buildResultsSection(), _buildAnalyzeAgainButton(), _buildSavedAnalyze()],
       );
     } else {
       return _buildTipsCarousel();
@@ -594,31 +612,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildCenterText() {
     return Column(
       children: [
-        Container(
-          padding: EdgeInsets.all(25),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withOpacity(0.2),
-                blurRadius: 10,
-                spreadRadius: 5,
-              ),
-              // Orta katman neon
-              BoxShadow(
-                color: Colors.white.withOpacity(1),
-                blurRadius: 10,
-                spreadRadius: 5,
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.5),
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Image.asset("assets/images/logo.png", width: 200),
-        ),
+        Image.asset("assets/images/logo1.png", width: 170),     
         const SizedBox(height: 20),
         Text(
           'Cilt Analizine Başla',
@@ -650,7 +644,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: _resetState,
-        icon: const Icon(Icons.refresh, color: Colors.white),
+        icon: const Icon(Icons.refresh, color: Colors.white,size: 24,),
         label: const Text(
           'Tekrar Analiz Yap',
           style: TextStyle(
@@ -669,4 +663,33 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       ),
     );
   }
+
+ Widget _buildSavedAnalyze() {
+  return Padding(
+    padding: const EdgeInsets.only(top: 15),
+    child: SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {},
+        icon: const Icon(Icons.save_outlined, color: Colors.white, size: 24),
+        label: const Text(
+          'Analizi Kaydet',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          backgroundColor: Colors.green[500],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 }
