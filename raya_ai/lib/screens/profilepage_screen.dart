@@ -1,11 +1,7 @@
-import 'dart:convert';
-import 'dart:io';
- import 'package:intl/intl.dart';
-
 import 'package:flutter/material.dart';
-import 'package:raya_ai/models/analysis_model.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
+import 'package:raya_ai/screens/analysis_history_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -57,12 +53,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     await prefs.remove('rememberMe');
 
     // 3️⃣ Login ekranına yönlendir
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginpageScreen()),
-      );
-    }
+  if (mounted) {
+  Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (context) => const LoginpageScreen()),
+    (route) => false, // tüm önceki sayfaları kaldır
+  );
+}
   } catch (e) {
     _showError('Çıkış yapılamadı: $e');
   }
@@ -330,7 +327,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _buildProfileOption(
                             icon: Icons.history,
                             title: 'Geçmiş Analizler',
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AnalysisHistoryScreen(),
+                                ),
+                              );
+                            },
                           ),
   
 
@@ -372,7 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // Delete Account Button
                           _buildActionButton(
                             text: 'Hesabı Sil',
-                            color: Colors.redAccent[700]!.withOpacity(0.65),
+                            color: const Color.fromARGB(255, 242, 53, 53).withOpacity(0.65),
                             onPressed: _deleteAccount,
                           ),
 

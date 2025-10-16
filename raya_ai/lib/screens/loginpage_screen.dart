@@ -58,7 +58,7 @@ void initState() {
 
   try {
     // ✅ user_name bilgisini metadata olarak gönderiyoruz
-   final response = await supabase.auth.signUp(
+   await supabase.auth.signUp(
   email: email,
   password: password,
   data: {
@@ -173,7 +173,7 @@ void initState() {
           ),
         ),
         backgroundColor: Colors.greenAccent[400],
-        duration: Duration(seconds: 3),
+        duration: Duration(seconds: 30),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
         behavior: SnackBarBehavior.floating,

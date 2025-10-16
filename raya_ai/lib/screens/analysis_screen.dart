@@ -1,5 +1,5 @@
-import 'dart:ui';
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:raya_ai/screens/profilepage_screen.dart';
@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../models/analysis_model.dart';
 import 'package:raya_ai/widgets/full_screen_image_viewer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -22,7 +23,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final TextEditingController _urlController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
 
-  late String userName;
+  String? userName;
 
   String? _statusMessage;
   List<AnalysisSection>? _analysisResult;
@@ -119,6 +120,44 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     } finally {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveCurrentAnalysis() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      setState(() {
+        _statusMessage = 'Kullanıcı oturumu bulunamadı.';
+      });
+      return;
+    }
+    if (_analysisResult == null || _analysisResult!.isEmpty) {
+      setState(() {
+        _statusMessage = 'Kaydedilecek analiz bulunamadı.';
+      });
+      return;
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storageKey = 'analyses_${user.id}';
+      final List<String> existingEncoded = prefs.getStringList(storageKey) ?? [];
+
+      final Map<String, dynamic> entry = {
+        'timestamp': DateTime.now().toIso8601String(),
+        'imagePath': _selectedImageFile?.path,
+        'imageUrl': _imageUrlForDisplay,
+        'sections': _analysisResult!.map((s) => s.toJson()).toList(),
+      };
+
+      existingEncoded.add(jsonEncode(entry));
+      await prefs.setStringList(storageKey, existingEncoded);
+
+      _showSuccess('Analiz kaydedildi');
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Analiz kaydedilemedi: $e';
       });
     }
   }
@@ -670,7 +709,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     child: SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: () {},
+        onPressed: _analysisResult == null ? null : _saveCurrentAnalysis,
         icon: const Icon(Icons.save_outlined, color: Colors.white, size: 24),
         label: const Text(
           'Analizi Kaydet',
@@ -693,3 +732,4 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 }
 
 }
+
