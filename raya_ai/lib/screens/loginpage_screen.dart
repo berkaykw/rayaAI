@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
+import 'package:raya_ai/screens/sorular.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -56,30 +57,28 @@ void initState() {
     return;
   }
 
-  try {
-    // ✅ user_name bilgisini metadata olarak gönderiyoruz
-   await supabase.auth.signUp(
-  email: email,
-  password: password,
-  data: {
-    'user_name': name,
-  },
-);
-
-    if (mounted) {
-      _showSuccess(
-        'Kayıt Başarılı! Lütfen e-posta adresinizi doğrulayın.',
+ try {
+      // ✅ has_completed_onboarding: false bayrağını metadata'ya ekle
+      await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'user_name': name,
+          'has_completed_onboarding': false, // <-- BU SATIRI EKLE
+        },
       );
-      // İstersen burada yönlendirme yapabilirsin
-      // Navigator.of(context).pushReplacementNamed('/home');
-    }
 
-  } on AuthException catch (e) {
-    _showError('Kayıt Başarısız: ${e.message}');
-  } catch (e) {
-    _showError('An unexpected error occurred: $e');
+      if (mounted) {
+        _showSuccess(
+          'Kayıt Başarılı! Lütfen e-posta adresinizi doğrulayın.',
+        );
+      }
+    } on AuthException catch (e) {
+      _showError('Kayıt Başarısız: ${e.message}');
+    } catch (e) {
+      _showError('An unexpected error occurred: $e');
+    }
   }
-}
 
   // ✅ Giriş Yapma Fonksiyonu
   Future<bool> _signIn() async {
@@ -112,6 +111,47 @@ void initState() {
     }
   }
 
+  // ✅ GİRİŞ İÇİN YENİ YÖNLENDİRME FONKSİYONU
+  Future<void> _handleLoginNavigation() async {
+    // Önce normal giriş yapmayı dene
+    final success = await _signIn();
+
+    // Giriş başarısızsa veya ekran artık yoksa dur
+    if (!success || !mounted) return;
+
+    try {
+      // Giriş yapan kullanıcıyı al
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        _showError("Kullanıcı oturumu bulunamadı.");
+        return;
+      }
+
+      // Kullanıcının metadata'sını kontrol et
+      final metadata = user.userMetadata;
+      // '?? false' kısmı, herhangi bir nedenle bayrak hiç ayarlanmamışsa
+      // (örn: eski kullanıcılar) onu 'false' varsayar.
+      final bool hasCompletedOnboarding =
+          metadata?['has_completed_onboarding'] ?? false;
+
+      if (hasCompletedOnboarding) {
+        // Soruları daha önce tamamlamış -> Ana Ekrana git
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AnalysisScreen()),
+        );
+      } else {
+        // İlk girişi, soruları doldurmadı -> Soru Ekranına git
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SkinOnboardingScreen()),
+        );
+      }
+    } catch (e) {
+      _showError("Yönlendirme hatası: $e");
+    }
+  }
+  
   // ✅ Beni Hatırla Fonksiyonu
   Future<void> _checkRememberMe() async {
   final prefs = await SharedPreferences.getInstance();
@@ -173,7 +213,7 @@ void initState() {
           ),
         ),
         backgroundColor: Colors.greenAccent[400],
-        duration: Duration(seconds: 30),
+        duration: Duration(seconds: 3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
         behavior: SnackBarBehavior.floating,
@@ -435,21 +475,15 @@ void initState() {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () async {
-                    if (isLogin) {
-                      final success = await _signIn(); // ✅ bekleniyor
-                      if (success) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AnalysisScreen(),
-                          ),
-                        );
-                      }
-                    } else {
-                      _signUp();
-                    }
-                  },
+                 onPressed: () async {
+            if (isLogin) {
+              // ✅ _signIn() ve yönlendirme mantığını ayır.
+              //    Yeni fonksiyonu burada çağır.
+              await _handleLoginNavigation();
+            } else {
+              _signUp();
+            }
+          },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.pink,
                     foregroundColor: Colors.white,
