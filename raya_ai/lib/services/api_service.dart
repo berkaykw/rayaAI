@@ -5,7 +5,7 @@ import 'dart:async';
 import '../models/analysis_model.dart';
 
 class ApiService {
-  final String _webhookUrl = 'https://niyq1iq5.rcld.app/webhook/image-input';
+  final String _webhookUrl = 'https://n8n.barancaki.me/webhook/image-input';
   
   // ImgBB API Key - imgbb.com'dan ücretsiz alabilirsiniz
   final String _imgbbApiKey = 'f7d35cc3ba4d440c5d85bb9e1a38faed';

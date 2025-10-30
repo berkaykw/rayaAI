@@ -258,40 +258,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton(
-                      onPressed: () async {
-  final newName = _nameController.text.trim();
-  final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
+  onPressed: () async {
+    final newName = _nameController.text.trim();
+    final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
 
-  if (newName.isNotEmpty && user != null) {
-    try {
-      // 1. ADIM: Authentication meta verisini güncelle
-      await supabase.auth.updateUser(
-        UserAttributes(
-          data: {'user_name': newName},
-        ),
-      );
+    if (newName.isNotEmpty && user != null) {
+      try {
+        // 1. ADIM: Authentication meta verisini güncelle
+        // Bu, gelecekteki trigger'lar veya fonksiyonlar için
+        // "ana kaynak" olarak kalır.
+        await supabase.auth.updateUser(
+          UserAttributes(
+            data: {'user_name': newName},
+          ),
+        );
 
-      // 2. ADIM: "profiles" tablosundaki veriyi güncelle
-      await supabase
-          .from('profiles')
-          .update({'user_name': newName})
-          .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
+      // 2. ADIM: "user_skin_profiles" tablosundaki veriyi güncelle
+        // (Eski kodunuzda 'profiles' yazıyordu, düzelttik)
+        await supabase
+            .from('user_skin_profiles') // <-- DÜZELTME BURADA
+            .update({'user_name': newName})
+            .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
 
-      if (mounted) {
-        setState(() {
-          userName = newName;
-        });
-        Navigator.of(context).pop();
-        _showSuccess('İsim başarıyla güncellendi');
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        _showError('İsim güncellenemedi: $e');
+        if (mounted) {
+          setState(() {
+            userName = newName;
+          });
+          Navigator.of(context).pop();
+          _showSuccess('İsim başarıyla güncellendi');
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          _showError('İsim güncellenemedi: $e');
+        }
       }
     }
-  }
-},
+  },
 
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.greenAccent[400],

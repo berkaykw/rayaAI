@@ -106,58 +106,73 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    // Butonu devre dışı bırak ve yükleniyor animasyonu göster
-    setState(() => _isLoading = true);
+  // Butonu devre dışı bırak ve yükleniyor animasyonu göster
+  setState(() => _isLoading = true); 
 
-    try {
-      // 1. (Opsiyonel ama önerilir) Toplanan tüm verileri bir map'e koy
-      final skinProfileData = {
-        'gender': gender,
-        'age_range': ageRange,
-        'skin_type': skinType,
-        'skin_problems': skinProblems,
-        'allergies': allergies,
-        'wash_frequency': washFrequency,
-        'routine_steps': routineSteps,
-        'sunscreen_frequency': sunscreenFrequency,
-        'smoking_status': smokingStatus,
-        'sleep_pattern': sleepPattern,
-        'stress_level': stressLevel,
-      };
+  // 1. Mevcut giriş yapmış kullanıcının ID'sini al
+  // Bu ID, bizim SQL tablomuzdaki 'id' sütununa karşılık gelecek.
+  final userId = supabase.auth.currentUser?.id;
 
-      // 2. Supabase kullanıcısını güncelle
-      await supabase.auth.updateUser(
-        UserAttributes(
-          data: {
-            'has_completed_onboarding': true, // <-- BAYRAĞI GÜNCELLE
-            'skin_profile': skinProfileData, // <-- Tüm profil verisini de kaydet
-          },
+  if (userId == null) {
+    // Kullanıcı bir şekilde çıkış yapmışsa işlemi durdur
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın."),
+          backgroundColor: Colors.red,
         ),
       );
+      setState(() => _isLoading = false);
+    }
+    return;
+  }
 
-      if (!mounted) return;
+  try {
+    // 2. Toplanan tüm verileri bir map'e koy 
+    final skinProfileData = {
+      'id': userId, // <-- EN ÖNEMLİSİ: Kullanıcı ID'sini ekle
+      'gender': gender, 
+      'age_range': ageRange, 
+      'skin_type': skinType, 
+      'skin_problems': skinProblems, 
+      'allergies': allergies, 
+      'wash_frequency': washFrequency, 
+      'routine_steps': routineSteps, 
+      'sunscreen_frequency': sunscreenFrequency, 
+      'smoking_status': smokingStatus, 
+      'sleep_pattern': sleepPattern, 
+      'stress_level': stressLevel, 
+      'has_completed_onboarding': true, // <-- Bayrağı da buraya ekliyoruz
+    };
 
-      // 3. Ana Ekrana Yönlendir
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => AnalysisScreen()),
+    // 3. Supabase 'user_skin_profiles' tablosuna 'upsert' yap
+    // 'upsert', eğer bu ID'ye sahip bir kayıt varsa günceller, yoksa yeni kayıt ekler.
+    // Bu, kullanıcının bilgilerini daha sonra değiştirmesine de olanak tanır.
+    await supabase.from('user_skin_profiles').upsert(skinProfileData);
+
+    if (!mounted) return; 
+
+    // 4. Ana Ekrana Yönlendir
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => AnalysisScreen()),
+    ); 
+  } catch (e) { 
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Profil kaydedilirken hata oluştu: $e"), 
+          backgroundColor: Colors.red, 
+        ),
       );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Profil kaydedilirken hata oluştu: $e"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      // Hata olsa da olmasa da yükleniyor durumunu bitir
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    }
+  } finally {
+    // Hata olsa da olmasa da yükleniyor durumunu bitir
+    if (mounted) {
+      setState(() => _isLoading = false); 
     }
   }
+}
 
  Widget _buildSelectableOption<T>({
   required T value,

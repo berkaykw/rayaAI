@@ -52,6 +52,7 @@ void initState() {
     return;
   }
 
+
   if (password != confirmPassword) {
     _showError('Şifreler eşleşmiyor');
     return;
