@@ -150,24 +150,29 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
 ),
                     const SizedBox(height: 20),
                     if (entries.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.history,
-                                  size: 48, color: Colors.white.withOpacity(0.6)),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Kayıtlı analiz bulunamadı',
-                                style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 16),
+                      Column(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),  
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(24.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.history,
+                                      size: 48, color: Colors.white.withOpacity(0.6)),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'Kayıtlı analiz bulunamadı',
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.9),
+                                        fontSize: 16),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       )
                     else
                       ListView.separated(

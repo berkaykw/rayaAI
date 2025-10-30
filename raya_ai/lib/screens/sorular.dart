@@ -150,6 +150,14 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
     // Bu, kullanıcının bilgilerini daha sonra değiştirmesine de olanak tanır.
     await supabase.from('user_skin_profiles').upsert(skinProfileData);
 
+    await supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'has_completed_onboarding': true,
+        },
+      ),
+    );
+    
     if (!mounted) return; 
 
     // 4. Ana Ekrana Yönlendir

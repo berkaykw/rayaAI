@@ -3,6 +3,7 @@ import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/sorular.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:ui';
 
 class LoginpageScreen extends StatefulWidget {
   const LoginpageScreen({Key? key}) : super(key: key);
@@ -71,7 +72,7 @@ void initState() {
 
       if (mounted) {
         _showSuccess(
-          'Kayıt Başarılı! Lütfen e-posta adresinizi doğrulayın.',
+          'Kayıt Başarılı! Giriş yapabilirsiniz.',
         );
       }
     } on AuthException catch (e) {
@@ -114,44 +115,28 @@ void initState() {
 
   // ✅ GİRİŞ İÇİN YENİ YÖNLENDİRME FONKSİYONU
   Future<void> _handleLoginNavigation() async {
-    // Önce normal giriş yapmayı dene
-    final success = await _signIn();
+  final success = await _signIn();
+  if (!success || !mounted) return;
 
-    // Giriş başarısızsa veya ekran artık yoksa dur
-    if (!success || !mounted) return;
+  final user = supabase.auth.currentUser;
+  if (user == null) return;
 
-    try {
-      // Giriş yapan kullanıcıyı al
-      final user = supabase.auth.currentUser;
-      if (user == null) {
-        _showError("Kullanıcı oturumu bulunamadı.");
-        return;
-      }
+  final metadata = user.userMetadata;
+  final bool hasCompletedOnboarding = metadata?['has_completed_onboarding'] ?? false;
 
-      // Kullanıcının metadata'sını kontrol et
-      final metadata = user.userMetadata;
-      // '?? false' kısmı, herhangi bir nedenle bayrak hiç ayarlanmamışsa
-      // (örn: eski kullanıcılar) onu 'false' varsayar.
-      final bool hasCompletedOnboarding =
-          metadata?['has_completed_onboarding'] ?? false;
-
-      if (hasCompletedOnboarding) {
-        // Soruları daha önce tamamlamış -> Ana Ekrana git
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => AnalysisScreen()),
-        );
-      } else {
-        // İlk girişi, soruları doldurmadı -> Soru Ekranına git
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => SkinOnboardingScreen()),
-        );
-      }
-    } catch (e) {
-      _showError("Yönlendirme hatası: $e");
-    }
+  if (hasCompletedOnboarding) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => AnalysisScreen()),
+    );
+  } else {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const SkinOnboardingScreen()),
+    );
   }
+}
+
   
   // ✅ Beni Hatırla Fonksiyonu
   Future<void> _checkRememberMe() async {
@@ -499,25 +484,30 @@ void initState() {
                   ),
                 ),
               ),
-
-              // Social Login Buttons
-              /*        Row(
+              SizedBox(height: 20),
+              Column(
                 children: [
-                  Expanded(
-                    child: _buildSocialButton(
-                      icon: Icons.g_mobiledata,
-                      text: 'Google',
+                  if (isLogin)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSocialButton(
+
+                          icon: Icons.g_mobiledata,
+                          text: 'Google',
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: _buildSocialButton(
+                          icon: Icons.apple,
+                          text: 'Apple',
+                        ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _buildSocialButton(
-                      icon: Icons.apple,
-                      text: 'Apple',
-                    ),
-                  ),
-                ],
-              ),    */
+                  ],
+                ), 
+              ],
+            ),
               SizedBox(height: 20),
 
               // Footer Text
@@ -608,36 +598,52 @@ void initState() {
     );
   }
 
-  Widget _buildSocialButton({required IconData icon, required String text}) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: Colors.white.withOpacity(1), width: 2),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {},
+Widget _buildSocialButton({
+  required IconData icon,
+  required String text,
+  VoidCallback? onTap,
+}) {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(25),
+    child: BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05), // GLASS EFFECT
           borderRadius: BorderRadius.circular(25),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: Colors.white, size: 24),
-              SizedBox(width: 8),
-              Text(
-                text,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+          border: Border.all(
+            color: Colors.white.withOpacity(0.35), // Glass Navbar ile aynı
+            width: 2,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap ?? () {},
+            borderRadius: BorderRadius.circular(25),
+            splashColor: Colors.white.withOpacity(0.1),
+            highlightColor: Colors.white.withOpacity(0.1),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 24),
+                SizedBox(width: 8),
+                Text(
+                  text,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
