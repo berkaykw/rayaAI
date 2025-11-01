@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/profilepage_screen.dart';
-import 'package:raya_ai/widgets/full_screen_image_viewer.dart';
+import 'package:raya_ai/widgets-tools/full_screen_image_viewer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

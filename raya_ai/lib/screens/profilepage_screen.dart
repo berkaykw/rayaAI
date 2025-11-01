@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
-import 'package:raya_ai/widgets/skin_profile_details_screen.dart';
+import 'package:raya_ai/widgets-tools/privacy_security_screen.dart';
+import 'package:raya_ai/widgets-tools/skin_profile_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -66,49 +67,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-  Future<void> _deleteAccount() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Color(0xFF2A2A2A),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            title: Text(
-              'Delete Account',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Text(
-              'Are you sure you want to delete your account? This action cannot be undone.',
-              style: TextStyle(color: Colors.white.withOpacity(0.8)),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel', style: TextStyle(color: Colors.white70)),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-    );
-
-    if (confirm == true) {
-      try {
-        // Supabase'de hesap silme işlemi
-        _showSuccess('Account deleted successfully');
-        await _signOut();
-      } catch (e) {
-        _showError('Failed to delete account: $e');
-      }
-    }
-  }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -262,7 +220,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   onPressed: () async {
     final newName = _nameController.text.trim();
     final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
-
+    if (newName.length > 16) {
+    _showError("İsim en fazla 16 karakter olabilir.");
+    return;
+    }
     if (newName.isNotEmpty && user != null) {
       try {
         // 1. ADIM: Authentication meta verisini güncelle
@@ -358,7 +319,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _buildProfileOption(
                             icon: Icons.lock_outline,
                             title: 'Privacy & Security',
-                            onTap: () {},
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PrivacyAndSecurityScreen(),
+                                ),
+                              );
+                            },
                           ),
 
                           SizedBox(height: 12),
@@ -387,13 +355,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
 
                           SizedBox(height: 12),
-
-                          // Delete Account Button
-                          _buildActionButton(
-                            text: 'Hesabı Sil',
-                            color: const Color.fromARGB(255, 242, 53, 53).withOpacity(0.65),
-                            onPressed: _deleteAccount,
-                          ),
 
                           SizedBox(height: 20),
                         ],
