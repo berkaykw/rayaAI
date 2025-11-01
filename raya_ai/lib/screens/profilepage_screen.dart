@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
+import 'package:raya_ai/widgets/skin_profile_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -326,7 +327,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
                           SizedBox(height: 12),
-
+                          _buildProfileOption(
+                        icon: Icons.spa_outlined, // Güzel bir ikon
+                        title: 'Cilt Profilim',
+                        onTap: () {
+                          // Birazdan oluşturacağımız yeni sayfaya yönlendir
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SkinProfileDetailsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      SizedBox(height: 12),
                           _buildProfileOption(
                             icon: Icons.history,
                             title: 'Geçmiş Analizler',
@@ -339,8 +353,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               );
                             },
                           ),
-  
-
                           SizedBox(height: 12),
 
                           _buildProfileOption(

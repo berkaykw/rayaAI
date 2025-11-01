@@ -3,7 +3,12 @@ import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SkinOnboardingScreen extends StatefulWidget {
-  const SkinOnboardingScreen({super.key});
+  final Map<String, dynamic>? existingData;
+
+  const SkinOnboardingScreen({
+    super.key,
+    this.existingData,
+  });
 
   @override
   State<SkinOnboardingScreen> createState() => _SkinOnboardingScreenState();
@@ -13,6 +18,8 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   bool _isLoading = false;
+
+  bool _isEditMode = false;
 
   final supabase = Supabase.instance.client;
 
@@ -82,6 +89,45 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
   final smokingOptions = ["Evet", "Hayır","Az Miktarda", "Bıraktım"];
   final sleepPatterns = ["Her gün 7+ saat", "Düzensiz", "Genellikle az uyurum"];
   final stressLevels = ["Düşük", "Orta", "Yüksek"];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingData != null) {
+      _isEditMode = true;
+      _loadExistingData(widget.existingData!);
+    }
+  }
+
+  void _loadExistingData(Map<String, dynamic> data) {
+    setState(() {
+      // Tip dönüşümlerine dikkat ederek verileri ata
+      gender = data['gender'] as String?;
+      ageRange = data['age_range'] as String?;
+      skinType = data['skin_type'] as String?;
+      washFrequency = data['wash_frequency'] as String?;
+      sunscreenFrequency = data['sunscreen_frequency'] as String?;
+      smokingStatus = data['smoking_status'] as String?;
+      sleepPattern = data['sleep_pattern'] as String?;
+      stressLevel = data['stress_level'] as String?;
+
+      // Veritabanından List<dynamic> olarak gelen verileri List<String>'e çevir
+      skinProblems = (data['skin_problems'] as List?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          [];
+
+      allergies = (data['allergies'] as List?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          [];
+
+      routineSteps = (data['routine_steps'] as List?)
+              ?.map((item) => item.toString())
+              .toList() ??
+          [];
+    });
+  }
 
   void _nextPage() {
     if (_currentPage < 8) {
@@ -160,27 +206,32 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
     
     if (!mounted) return; 
 
-    // 4. Ana Ekrana Yönlendir
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => AnalysisScreen()),
-    ); 
-  } catch (e) { 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (_isEditMode) {
+        // Eğer düzenleme modundaysa, bir önceki sayfaya (Profile)
+        // 'true' sonucuyla dön. (Kaydettiğini bilsin)
+        Navigator.pop(context, true); // <-- 'true' DÖNDÜR
+      } else {
+        // Yeni kullanıcıysa, Ana Ekrana yönlendir
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AnalysisScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Profil kaydedilirken hata oluştu: $e"), 
           backgroundColor: Colors.red, 
         ),
       );
-    }
-  } finally {
-    // Hata olsa da olmasa da yükleniyor durumunu bitir
-    if (mounted) {
-      setState(() => _isLoading = false); 
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
-}
 
  Widget _buildSelectableOption<T>({
   required T value,
@@ -262,10 +313,18 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
             // Üst kısım: Geri butonu + progress bar
             Row(
               children: [
-                if (_currentPage > 0)
+                if (_isEditMode || _currentPage > 0)
                   IconButton(
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: _previousPage,
+                    onPressed: () {
+                      if (_isEditMode && _currentPage == 0) {
+                        // Düzenleme modunda ve ilk sayfadaysa, kaydetmeden çık
+                        Navigator.pop(context, false); // <-- 'false' DÖNDÜR
+                      } else {
+                        // Diğer durumlarda bir önceki soruya git
+                        _previousPage();
+                      }
+                    },
                   )
                 else
                   const SizedBox(width: 48),
