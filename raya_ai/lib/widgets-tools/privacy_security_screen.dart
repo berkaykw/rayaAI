@@ -190,7 +190,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                         onTap: () {
                         },
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 50),
                       Container(
                         width: double.infinity,
                         height: 50,
@@ -210,6 +210,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                                 ),
                               ),
                       ),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
