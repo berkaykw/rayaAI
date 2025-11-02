@@ -24,12 +24,17 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final ImagePicker _picker = ImagePicker();
 
   String? userName;
+  String userTier = 'free'; // 'free' veya 'premium'
 
   String? _statusMessage;
   List<AnalysisSection>? _analysisResult;
   bool _isLoading = false;
   String? _imageUrlForDisplay;
   File? _selectedImageFile;
+
+  // Yeni: Ürün önerisi tercihleri
+  bool _includeProducts = false;
+  int _productCount = 3;
 
   @override
   void initState() {
@@ -38,6 +43,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       setState(() {});
     });
     _loadUserName();
+    _loadUserTier();
   }
 
   void _loadUserName() {
@@ -45,6 +51,28 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     setState(() {
       userName = user?.userMetadata?['user_name'];
     });
+  }
+
+  Future<void> _loadUserTier() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final response = await Supabase.instance.client
+          .from('user_subscriptions')
+          .select('tier')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+      setState(() {
+        userTier = response?['tier'] ?? 'free';
+      });
+    } catch (e) {
+      setState(() {
+        userTier = 'free';
+      });
+    }
   }
 
   @override
@@ -59,16 +87,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     });
   }
 
-  /// Kamera ile fotoğraf çek
   Future<void> _pickImageFromCamera() async {
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85, // Kalite ayarı
+        imageQuality: 85,
       );
 
       if (image != null) {
-        await _analyzePickedImage(File(image.path));
+        _setSelectedImage(File(image.path));
       }
     } catch (e) {
       setState(() {
@@ -77,7 +104,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
   }
 
-  /// Galeriden fotoğraf seç
   Future<void> _pickImageFromGallery() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -86,7 +112,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       );
 
       if (image != null) {
-        await _analyzePickedImage(File(image.path));
+        _setSelectedImage(File(image.path));
       }
     } catch (e) {
       setState(() {
@@ -95,21 +121,33 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     }
   }
 
-  /// Seçilen resmi analiz et
-  Future<void> _analyzePickedImage(File imageFile) async {
+  void _setSelectedImage(File imageFile) {
+    setState(() {
+      _selectedImageFile = imageFile;
+      _imageUrlForDisplay = null;
+      _statusMessage = null;
+      _analysisResult = null;
+    });
+  }
+
+  Future<void> _analyzePickedImage() async {
+    if (_selectedImageFile == null) {
+      setState(() {
+        _statusMessage = 'Lütfen önce bir resim seçin.';
+      });
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     setState(() {
       _isLoading = true;
       _statusMessage = null;
       _analysisResult = null;
-      _selectedImageFile = imageFile;
-      _imageUrlForDisplay = null; // URL ile gelen resimler için
     });
 
     try {
-      // Resmi yükle ve analiz et
-      final result = await _apiService.analyzeImageFromGallery(imageFile);
+      final result = await _apiService.analyzeImageFromGallery(_selectedImageFile!);
       setState(() {
         _analysisResult = result;
       });
@@ -169,6 +207,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _analysisResult = null;
       _selectedImageFile = null;
       _imageUrlForDisplay = null;
+      _includeProducts = false;
+      _productCount = 3;
     });
   }
 
@@ -187,6 +227,268 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  void _showPremiumDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.grey[900]!,
+                Colors.black,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Colors.pink.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Premium Icon
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.pinkAccent, Colors.pink],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.workspace_premium,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                // Title
+                Text(
+                  'Premium\'a Geçin',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Daha fazla özelliğin keyfini çıkarın',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // Features
+                _buildPremiumFeature(
+                  Icons.shopping_bag,
+                  '10 Ürün Önerisi',
+                  'Daha fazla seçenek, daha iyi sonuçlar',
+                ),
+                SizedBox(height: 12),
+                _buildPremiumFeature(
+                  Icons.compare,
+                  'Detaylı Karşılaştırma',
+                  'Ürünleri yan yana inceleyin',
+                ),
+                SizedBox(height: 12),
+                _buildPremiumFeature(
+                  Icons.support_agent,
+                  'Öncelikli Destek',
+                  'Sorularınız hızlıca cevaplanır',
+                ),
+                SizedBox(height: 12),
+                _buildPremiumFeature(
+                  Icons.block,
+                  'Reklamsız Deneyim',
+                  'Kesintisiz kullanım',
+                ),
+                SizedBox(height: 24),
+
+                // Price Box
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.pinkAccent.withOpacity(0.35),
+                        Colors.pink.withOpacity(0.4),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '₺169,99',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'aylık',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₺339,99',
+                            style: TextStyle(
+                              decoration: TextDecoration.lineThrough,
+                              decorationThickness: 2,
+                              decorationColor: Colors.black.withOpacity(0.6),
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '%50 İndirim',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                // Buttons
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Premium satın alma işlemi
+                      Navigator.pop(context);
+                      _showSuccess('Premium özelliği yakında aktif olacak!');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: Colors.pink.withOpacity(0.7),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.workspace_premium, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Premium\'a Geç',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'Daha Sonra',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumFeature(IconData icon, String title, String subtitle) {
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            color: Colors.green,
+            size: 20,
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: Colors.white60,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -287,9 +589,25 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         Column(
                           children: [
                             _buildButtonGalery(),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+
+                      // Seçilen resim ve ürün önerisi seçenekleri
+                      if (_selectedImageFile != null &&
+                          !_isLoading &&
+                          _analysisResult == null)
+                        Column(
+                          children: [
+                            _buildSelectedImagePreview(),
+                            const SizedBox(height: 20),
+                            _buildProductOptionsSection(),
+                            const SizedBox(height: 20),
+                            _buildAnalyzeButton(),
                             const SizedBox(height: 40),
                           ],
                         ),
+
                       _buildBody(),
                       SizedBox(height: 200),
                       if (_isLoading &&
@@ -316,6 +634,461 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
+  Widget _buildProductOptionsSection() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.purple.withOpacity(0.15),
+            Colors.pink.withOpacity(0.15),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Ürün Önerisi Toggle
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.shopping_bag_outlined,
+                          color: Colors.pinkAccent,
+                          size: 22,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Ürün Önerisi',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Cildinize uygun ürünler önerelim',
+                      style: TextStyle(
+                        color: Colors.white60,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Toggle Switch
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _includeProducts = !_includeProducts;
+                    if (!_includeProducts) {
+                      _productCount = 3;
+                    }
+                  });
+                },
+                child: Container(
+                  width: 56,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: _includeProducts
+                        ? Colors.pinkAccent
+                        : Colors.white.withOpacity(0.2),
+                  ),
+                  child: AnimatedAlign(
+                    duration: Duration(milliseconds: 200),
+                    alignment: _includeProducts
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                    child: Container(
+                      width: 26,
+                      height: 26,
+                      margin: EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Ürün sayısı seçimi (sadece toggle aktifse göster)
+          if (_includeProducts) ...[
+            SizedBox(height: 20),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.white70,
+                  size: 16,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Kaç ürün görmek istersiniz?',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12),
+
+            // 3 Ürün Seçeneği
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _productCount = 3;
+                });
+              },
+              child: Container(
+                padding: EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: _productCount == 3
+                      ? Colors.purple.withOpacity(0.15)
+                      : Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _productCount == 3
+                        ? Colors.purple
+                        : Colors.white.withOpacity(0.2),
+                    width: 2,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _productCount == 3
+                              ? Colors.purple
+                              : Colors.white.withOpacity(0.4),
+                          width: 2,
+                        ),
+                        color: _productCount == 3
+                            ? Colors.purple
+                            : Colors.transparent,
+                      ),
+                      child: _productCount == 3
+                          ? Center(
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '3 Ürün',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                            ),
+                          ),
+                          Text(
+                            'Ücretsiz',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.green,
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        'ÜCRETSİZ',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 12),
+
+            // 10 Ürün Seçeneği (Premium)
+            GestureDetector(
+              onTap: () {
+                if (userTier == 'premium') {
+                  setState(() {
+                    _productCount = 10;
+                  });
+                } else {
+                  _showPremiumDialog();
+                }
+              },
+              child: Stack(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: _productCount == 10 && userTier == 'premium'
+                          ? Colors.amber.withOpacity(0.3)
+                          : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _productCount == 10 && userTier == 'premium'
+                            ? Colors.amber
+                            : Colors.white.withOpacity(0.2),
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color:
+                                  _productCount == 10 && userTier == 'premium'
+                                      ? Colors.amber
+                                      : Colors.white.withOpacity(0.4),
+                              width: 2,
+                            ),
+                            color: _productCount == 10 && userTier == 'premium'
+                                ? Colors.amber
+                                : Colors.transparent,
+                          ),
+                          child: _productCount == 10 && userTier == 'premium'
+                              ? Center(
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    '10 Ürün',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6),
+                                  Icon(
+                                    Icons.star_rounded,
+                                    color: Colors.yellowAccent,
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'Premium',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (userTier == 'free')
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Colors.pinkAccent, Colors.pink],
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.workspace_premium,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Premium\'a Geç',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.amber,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              'PREMIUM',
+                              style: TextStyle(
+                                color: Colors.amber,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (userTier == 'free')
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectedImagePreview() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 0),
+      child: GestureDetector(
+        onTap: () {
+          if (_selectedImageFile == null && _imageUrlForDisplay == null) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => FullScreenImageViewer(
+                imageUrl: _imageUrlForDisplay,
+                imagePath: _selectedImageFile?.path,
+                isLocalFile: _selectedImageFile != null,
+              ),
+            ),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Hero(
+            tag: _selectedImageFile?.path ?? _imageUrlForDisplay ?? '',
+            child: _selectedImageFile != null
+                ? Image.file(
+                    _selectedImageFile!,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : (_imageUrlForDisplay != null
+                    ? Image.network(
+                        _imageUrlForDisplay!,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : const SizedBox.shrink()),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalyzeButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : _analyzePickedImage,
+        icon: const Icon(Icons.auto_fix_high_sharp, color: Colors.white),
+        label: const Text(
+          'Analiz Et',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          backgroundColor: Colors.pink,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBody() {
     if (_isLoading) {
       return Column(children: [SizedBox(height: 250), _buildLoadingState()]);
@@ -336,7 +1109,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _pickImageFromCamera, // GÜNCELLENDI
+        onPressed: _isLoading ? null : _pickImageFromCamera,
         icon: const Icon(Icons.camera_alt, color: Colors.white),
         label: const Text(
           'Fotoğraf Çek',
@@ -361,7 +1134,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _pickImageFromGallery, // GÜNCELLENDI
+        onPressed: _isLoading ? null : _pickImageFromGallery,
         icon: const Icon(Icons.photo_library_sharp, color: Colors.white),
         label: const Text(
           'Galeriden Seç',
@@ -517,7 +1290,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             const Icon(Icons.error_outline, color: Colors.redAccent, size: 40),
             const SizedBox(height: 12),
             Text(
-              _statusMessage!,
+              _statusMessage ?? 'Bilinmeyen bir hata oluştu.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.white, fontSize: 16),
             ),
@@ -651,7 +1424,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   Widget _buildCenterText() {
     return Column(
       children: [
-        Image.asset("assets/images/logo1.png", width: 170),     
+        Image.asset("assets/images/logo1.png", width: 170),
         const SizedBox(height: 20),
         Text(
           'Cilt Analizine Başla',
@@ -732,4 +1505,3 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 }
 
 }
-
