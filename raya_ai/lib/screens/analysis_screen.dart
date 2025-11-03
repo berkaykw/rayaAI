@@ -146,7 +146,7 @@ Future<void> _analyzePickedImage() async {
       _analysisResult = null;
     });
 
-    // 1. KULLANICI ID'SİNİ AL (YENİ EKLENDİ)
+    // 1. KULLANICI ID'SİNİ AL
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       setState(() {
@@ -162,13 +162,12 @@ Future<void> _analyzePickedImage() async {
       final result = await _apiService.analyzeImageFromGallery(
         _selectedImageFile!,
         userId,
+        _includeProducts, 
+        _productCount, 
       );
       
       setState(() {
         _analysisResult = result;
-        // Analiz başarılı olduğunda ImgBB'den gelen URL'yi de saklayalım
-        // (Eğer _apiService'den URL'yi döndürebilirsek daha iyi olur ama şimdilik
-        // kaydetme butonu için _selectedImageFile'a güveniriz)
       });
     } catch (e) {
       setState(() {

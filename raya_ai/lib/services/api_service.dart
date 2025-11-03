@@ -36,14 +36,20 @@ class ApiService {
     }
   }
 
-  /// Resim URL'sini ve KULLANICI ID'sini analiz eder
+  /// Resim URL'sini, kullanıcı ID'sini ve ürün tercihlerini analiz eder
   Future<List<AnalysisSection>> analyzeImageUrl(
-      String imageUrl, String userId) async { // <-- 1. YENİ PARAMETRE EKLENDİ
-
-    // <-- 2. GÖVDEYE userId EKLENDİ
+    String imageUrl,
+    String userId,
+    bool includeProducts, // <-- YENİ PARAMETRE
+    int productCount,     // <-- YENİ PARAMETRE
+  ) async {
+    
+    // <-- YENİ: Gövdeye tüm parametreler eklendi
     final body = jsonEncode({
       'imageUrl': imageUrl,
-      'userId': userId, // Kullanıcı kimliği buraya eklendi
+      'userId': userId,
+      'includeProducts': includeProducts, // Ürün önerisi istiyor mu?
+      'productCount': productCount,       // Kaç adet istiyor?
     });
 
     try {
@@ -54,7 +60,7 @@ class ApiService {
             body: body,
           )
           .timeout(const Duration(seconds: 500));
-
+          
       if (response.statusCode == 200) {
         final List<dynamic> decodedBody = jsonDecode(response.body);
         final Map<String, dynamic> outputMap = decodedBody[0]['output'];
@@ -75,13 +81,21 @@ class ApiService {
 
   /// Galeriden seçilen resmi yükleyip analiz eder (tek fonksiyon)
   Future<List<AnalysisSection>> analyzeImageFromGallery(
-      File imageFile, String userId) async { // <-- 3. YENİ PARAMETRE EKLENDİ
-
+    File imageFile,
+    String userId,
+    bool includeProducts, // <-- YENİ PARAMETRE
+    int productCount,     // <-- YENİ PARAMETRE
+  ) async {
+    
     // 1. Önce resmi ImgBB'ye yükle
     final imageUrl = await uploadImageToImgBB(imageFile);
 
-    // 2. Dönen URL ve userId ile analiz yap
-    // <-- 4. userId BURADAN analyzeImageUrl'a İLETİLDİ
-    return await analyzeImageUrl(imageUrl, userId);
+    // 2. Dönen URL ve TÜM parametreler ile analiz yap
+    return await analyzeImageUrl(
+      imageUrl,
+      userId,
+      includeProducts, // <-- YENİ
+      productCount,    // <-- YENİ
+    );
   }
 }
