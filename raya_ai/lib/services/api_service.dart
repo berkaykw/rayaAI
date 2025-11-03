@@ -6,18 +6,15 @@ import '../models/analysis_model.dart';
 
 class ApiService {
   final String _webhookUrl = 'https://n8n.barancaki.me/webhook/image-input';
-  
-  // ImgBB API Key - imgbb.com'dan ücretsiz alabilirsiniz
   final String _imgbbApiKey = 'f7d35cc3ba4d440c5d85bb9e1a38faed';
 
   /// Galeriden seçilen resmi ImgBB'ye yükler ve URL döner
   Future<String> uploadImageToImgBB(File imageFile) async {
+    // ... (Bu fonksiyonda değişiklik yok)
     try {
-      // Resmi base64'e çevir
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      // ImgBB'ye POST isteği gönder
       final response = await http.post(
         Uri.parse('https://api.imgbb.com/1/upload'),
         body: {
@@ -28,7 +25,6 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // ImgBB'den dönen resim URL'sini al
         return data['data']['url'];
       } else {
         throw Exception('Resim yüklenemedi: ${response.statusCode}');
@@ -40,9 +36,15 @@ class ApiService {
     }
   }
 
-  /// Resim URL'sini analiz eder
-  Future<List<AnalysisSection>> analyzeImageUrl(String imageUrl) async {
-    final body = jsonEncode({'imageUrl': imageUrl});
+  /// Resim URL'sini ve KULLANICI ID'sini analiz eder
+  Future<List<AnalysisSection>> analyzeImageUrl(
+      String imageUrl, String userId) async { // <-- 1. YENİ PARAMETRE EKLENDİ
+
+    // <-- 2. GÖVDEYE userId EKLENDİ
+    final body = jsonEncode({
+      'imageUrl': imageUrl,
+      'userId': userId, // Kullanıcı kimliği buraya eklendi
+    });
 
     try {
       final response = await http
@@ -72,11 +74,14 @@ class ApiService {
   }
 
   /// Galeriden seçilen resmi yükleyip analiz eder (tek fonksiyon)
-  Future<List<AnalysisSection>> analyzeImageFromGallery(File imageFile) async {
+  Future<List<AnalysisSection>> analyzeImageFromGallery(
+      File imageFile, String userId) async { // <-- 3. YENİ PARAMETRE EKLENDİ
+
     // 1. Önce resmi ImgBB'ye yükle
     final imageUrl = await uploadImageToImgBB(imageFile);
-    
-    // 2. Dönen URL ile analiz yap
-    return await analyzeImageUrl(imageUrl);
+
+    // 2. Dönen URL ve userId ile analiz yap
+    // <-- 4. userId BURADAN analyzeImageUrl'a İLETİLDİ
+    return await analyzeImageUrl(imageUrl, userId);
   }
 }
