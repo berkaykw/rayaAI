@@ -130,7 +130,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     });
   }
 
-  Future<void> _analyzePickedImage() async {
+Future<void> _analyzePickedImage() async {
     if (_selectedImageFile == null) {
       setState(() {
         _statusMessage = 'Lütfen önce bir resim seçin.';
@@ -146,10 +146,29 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       _analysisResult = null;
     });
 
+    // 1. KULLANICI ID'SİNİ AL (YENİ EKLENDİ)
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) {
+      setState(() {
+        _statusMessage = "Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.";
+        _isLoading = false;
+      });
+      return;
+    }
+    final String userId = user.id;
+
     try {
-      final result = await _apiService.analyzeImageFromGallery(_selectedImageFile!);
+      // 2. SERVİSİ YENİ PARAMETRELERLE ÇAĞIR (GÜNCELLENDİ)
+      final result = await _apiService.analyzeImageFromGallery(
+        _selectedImageFile!,
+        userId,
+      );
+      
       setState(() {
         _analysisResult = result;
+        // Analiz başarılı olduğunda ImgBB'den gelen URL'yi de saklayalım
+        // (Eğer _apiService'den URL'yi döndürebilirsek daha iyi olur ama şimdilik
+        // kaydetme butonu için _selectedImageFile'a güveniriz)
       });
     } catch (e) {
       setState(() {
@@ -2142,7 +2161,7 @@ Widget _buildAnalyzeAgainButton() {
                   width: 2,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 24),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -2220,7 +2239,6 @@ Widget _buildAnalyzeAgainButton() {
   );
 }
 
-
 Widget _buildSavedAnalyze() {
   final bool isDisabled = _analysisResult == null;
   
@@ -2236,7 +2254,7 @@ Widget _buildSavedAnalyze() {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
+                    color: Colors.deepPurple.withOpacity(0.3),
                     blurRadius: 8,
                     spreadRadius: 0,
                     offset: Offset(0, 8),
@@ -2257,7 +2275,7 @@ Widget _buildSavedAnalyze() {
                       Color(0xFF0D0D0D),
                     ]
                   : [
-                      Color(0xFF1B2E1B), // Koyu yeşil
+                      Color(0xFF2A1B3D), // Koyu mor
                       Color(0xFF1A1A1A), // Koyu gri
                     ],
               begin: Alignment.topLeft,
@@ -2266,7 +2284,7 @@ Widget _buildSavedAnalyze() {
             border: Border.all(
               color: isDisabled
                   ? Colors.white.withOpacity(0.2)
-                  : Colors.green.withOpacity(0.5),
+                  : Colors.deepPurple.withOpacity(0.5),
               width: 2,
             ),
           ),
@@ -2275,10 +2293,10 @@ Widget _buildSavedAnalyze() {
             child: InkWell(
               onTap: isDisabled ? null : _saveCurrentAnalysis,
               borderRadius: BorderRadius.circular(20),
-              splashColor: isDisabled ? Colors.transparent : Colors.green.withOpacity(0.3),
-              highlightColor: isDisabled ? Colors.transparent : Colors.green.withOpacity(0.2),
+              splashColor: isDisabled ? Colors.transparent : Colors.deepPurple.withOpacity(0.3),
+              highlightColor: isDisabled ? Colors.transparent : Colors.deepPurple.withOpacity(0.2),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 24),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -2292,8 +2310,8 @@ Widget _buildSavedAnalyze() {
                                   Colors.grey[800]!,
                                 ]
                               : [
-                                  Colors.greenAccent,
-                                  Colors.green,
+                                  Colors.deepPurpleAccent,
+                                  Colors.deepPurple,
                                 ],
                         ),
                         borderRadius: BorderRadius.circular(12),
@@ -2301,7 +2319,7 @@ Widget _buildSavedAnalyze() {
                             ? []
                             : [
                                 BoxShadow(
-                                  color: Colors.green.withOpacity(0.5),
+                                  color: Colors.deepPurple.withOpacity(0.5),
                                   blurRadius: 8,
                                   offset: Offset(0, 4),
                                 ),
