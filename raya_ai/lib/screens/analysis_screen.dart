@@ -1023,71 +1023,249 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildSelectedImagePreview() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: GestureDetector(
-        onTap: () {
-          if (_selectedImageFile == null && _imageUrlForDisplay == null) return;
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FullScreenImageViewer(
-                imageUrl: _imageUrlForDisplay,
-                imagePath: _selectedImageFile?.path,
-                isLocalFile: _selectedImageFile != null,
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 0),
+    child: Stack(
+      children: [
+        // Ana resim
+        GestureDetector(
+          onTap: () {
+            if (_selectedImageFile == null && _imageUrlForDisplay == null) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullScreenImageViewer(
+                  imageUrl: _imageUrlForDisplay,
+                  imagePath: _selectedImageFile?.path,
+                  isLocalFile: _selectedImageFile != null,
+                ),
+              ),
+            );
+          },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Hero(
+              tag: _selectedImageFile?.path ?? _imageUrlForDisplay ?? '',
+              child: _selectedImageFile != null
+                  ? Image.file(
+                      _selectedImageFile!,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : (_imageUrlForDisplay != null
+                      ? Image.network(
+                          _imageUrlForDisplay!,
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : const SizedBox.shrink()),
+            ),
+          ),
+        ),
+        
+        // Sağ üst badge - Analiz tamamlandı
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.green.withOpacity(0.9),
+                  Colors.greenAccent.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+                SizedBox(width: 6),
+                Text(
+                  'Fotoğraf Yüklendi',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.3),
+                        offset: Offset(0, 1),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Sol alt - Büyütme butonu
+        Positioned(
+          bottom: 12,
+          left: 12,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FullScreenImageViewer(
+                        imageUrl: _imageUrlForDisplay,
+                        imagePath: _selectedImageFile?.path,
+                        isLocalFile: _selectedImageFile != null,
+                      ),
+                    ),
+                  );
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.zoom_in_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'Büyüt',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          );
-        },
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Hero(
-            tag: _selectedImageFile?.path ?? _imageUrlForDisplay ?? '',
-            child: _selectedImageFile != null
-                ? Image.file(
-                    _selectedImageFile!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  )
-                : (_imageUrlForDisplay != null
-                    ? Image.network(
-                        _imageUrlForDisplay!,
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      )
-                    : const SizedBox.shrink()),
           ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
-  Widget _buildAnalyzeButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _analyzePickedImage,
-        icon: const Icon(Icons.auto_fix_high_sharp, color: Colors.white),
-        label: const Text(
-          'Analiz Et',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+ Widget _buildAnalyzeButton() {
+  return Container(
+    width: double.infinity,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.pink.withOpacity(0.3),
+          blurRadius: 20,
+          spreadRadius: 0,
+          offset: Offset(0, 8),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          backgroundColor: Colors.pink,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      ],
+    ),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.pink.withOpacity(0.3),
+            Colors.pinkAccent.withOpacity(0.2),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _isLoading ? null : _analyzePickedImage,
+          borderRadius: BorderRadius.circular(20),
+          splashColor: Colors.white.withOpacity(0.1),
+          highlightColor: Colors.white.withOpacity(0.05),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 15),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    Icons.auto_fix_high_sharp,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text(
+                  'Analiz Et',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.3),
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildBody() {
     if (_isLoading) {
@@ -1101,59 +1279,162 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
         children: [_buildResultsSection(), _buildAnalyzeAgainButton(), _buildSavedAnalyze()],
       );
     } else {
-      return _buildTipsCarousel();
+      return Column(
+        children: [
+          SizedBox(height: 20),
+          _buildTipsCarousel(),
+        ],
+      );
     }
   }
 
-  Widget _buildButtonCamera() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _pickImageFromCamera,
-        icon: const Icon(Icons.camera_alt, color: Colors.white),
-        label: const Text(
-          'Fotoğraf Çek',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+ Widget _buildButtonCamera() {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color.fromARGB(255, 94, 9, 54).withOpacity(0.3),
+          Color.fromARGB(255, 94, 9, 54).withOpacity(0.2),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.2),
+        width: 1.5,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Color.fromARGB(255, 94, 9, 54).withOpacity(0.3),
+          blurRadius: 20,
+          spreadRadius: 0,
+          offset: Offset(0, 8),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          backgroundColor: const Color.fromARGB(255, 94, 9, 54),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _isLoading ? null : _pickImageFromCamera,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: Colors.white.withOpacity(0.1),
+        highlightColor: Colors.white.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.camera_alt,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Fotoğraf Çek',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.3),
+                      offset: Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildButtonGalery() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _pickImageFromGallery,
-        icon: const Icon(Icons.photo_library_sharp, color: Colors.white),
-        label: const Text(
-          'Galeriden Seç',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+Widget _buildButtonGalery() {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Colors.pink.withOpacity(0.3),
+          Colors.pinkAccent.withOpacity(0.2),
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withOpacity(0.2),
+        width: 1.5,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.pink.withOpacity(0.3),
+          blurRadius: 20,
+          spreadRadius: 0,
+          offset: Offset(0, 8),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          backgroundColor: Colors.pink,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _isLoading ? null : _pickImageFromGallery,
+        borderRadius: BorderRadius.circular(20),
+        splashColor: Colors.white.withOpacity(0.1),
+        highlightColor: Colors.white.withOpacity(0.05),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.photo_library_sharp,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Galeriden Seç',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.3),
+                      offset: Offset(0, 2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildTipsCarousel() {
     final tips = [
@@ -1300,126 +1581,490 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildResultsSection() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Resim gösterimi - hem URL hem de File desteği
-          if (_imageUrlForDisplay != null || _selectedImageFile != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) => FullScreenImageViewer(
-                            imageUrl: _imageUrlForDisplay,
-                            imagePath: _selectedImageFile?.path,
-                            isLocalFile: _selectedImageFile != null,
-                          ),
+ Widget _buildResultsSection() {
+  return SingleChildScrollView(
+    child: Column(
+      children: [
+        // Resim gösterimi - Modern ve şık tasarım
+        if (_imageUrlForDisplay != null || _selectedImageFile != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 24, left: 0, right: 0),
+            child: Stack(
+              children: [
+                // Glow effect altında
+                Positioned.fill(
+                  child: Container(
+                    margin: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink.withOpacity(0.3),
+                          blurRadius: 30,
+                          spreadRadius: 0,
+                          offset: Offset(0, 10),
+                        ),
+                        BoxShadow(
+                          color: Colors.purple.withOpacity(0.2),
+                          blurRadius: 40,
+                          spreadRadius: 0,
+                          offset: Offset(0, 15),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Hero(
-                    tag: _selectedImageFile?.path ?? _imageUrlForDisplay ?? '',
-                    child:
-                        _selectedImageFile != null
-                            ? Image.file(
-                              _selectedImageFile!,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                            : Image.network(
-                              _imageUrlForDisplay!,
-                              height: 200,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) => Container(
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: Colors.black26,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Center(
-                                      child: Icon(
-                                        Icons.broken_image,
-                                        color: Colors.white54,
-                                        size: 50,
+                  ),
+                ),
+                
+                // Ana container
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withOpacity(0.1),
+                        Colors.white.withOpacity(0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    border: Border.all(
+                      color: Colors.pink.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  padding: EdgeInsets.all(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      children: [
+                        // Resim
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageViewer(
+                                  imageUrl: _imageUrlForDisplay,
+                                  imagePath: _selectedImageFile?.path,
+                                  isLocalFile: _selectedImageFile != null,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Hero(
+                            tag: _selectedImageFile?.path ?? _imageUrlForDisplay ?? '',
+                            child: _selectedImageFile != null
+                                ? Image.file(
+                                    _selectedImageFile!,
+                                    height: 240,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.network(
+                                    _imageUrlForDisplay!,
+                                    height: 240,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      height: 240,
+                                      decoration: BoxDecoration(
+                                        color: Colors.black26,
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          color: Colors.white54,
+                                          size: 50,
+                                        ),
                                       ),
                                     ),
                                   ),
+                          ),
+                        ),
+                        
+                        // Alt gradient overlay
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            height: 100,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withOpacity(0.7),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
                             ),
+                          ),
+                        ),
+                        
+                        // Sağ üst badge - Analiz tamamlandı
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green.withOpacity(0.9),
+                                  Colors.greenAccent.withOpacity(0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.4),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Analiz Tamamlandı',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.3),
+                                        offset: Offset(0, 1),
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        // Sol alt - Büyütme butonu
+                        Positioned(
+                          bottom: 12,
+                          left: 12,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => FullScreenImageViewer(
+                                        imageUrl: _imageUrlForDisplay,
+                                        imagePath: _selectedImageFile?.path,
+                                        isLocalFile: _selectedImageFile != null,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                borderRadius: BorderRadius.circular(12),
+                                child: Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.zoom_in_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Büyüt',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+                
+                // Üst sağ köşe accent glow
+                Positioned(
+                  top: -30,
+                  right: -30,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.pink.withOpacity(0.15),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          if (_analysisResult != null)
-            ListView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: _analysisResult!.length,
-              itemBuilder: (context, index) {
-                final section = _analysisResult![index];
-                return _buildAnalysisCard(section);
-              },
-            ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
+          ),
+        
+        // Analiz kartları
+        if (_analysisResult != null)
+          ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            itemCount: _analysisResult!.length,
+            itemBuilder: (context, index) {
+              final section = _analysisResult![index];
+              return _buildAnalysisCard(section);
+            },
+          ),
+        const SizedBox(height: 20),
+      ],
+    ),
+  );
+}
 
   Widget _buildAnalysisCard(AnalysisSection section) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                section.title,
-                style: const TextStyle(
-                  color: Colors.pinkAccent,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    child: Stack(
+      children: [
+        // Arka plan glow efekti
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.pink.withOpacity(0.25),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: Offset(0, 8),
                 ),
-              ),
-              const Divider(height: 20, color: Colors.white38),
-              Text(
-                section.content,
-                style: TextStyle(
-                  height: 1.5,
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 15,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+        
+        // Ana kart - Glass effect
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.12),
+                Colors.white.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: Colors.pink.withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                // Pembe gradient overlay (üst köşe)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        colors: [
+                          Colors.pink.withOpacity(0.2),
+                          Colors.transparent,
+                        ],
+                        radius: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // İçerik
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Başlık bölümü
+                      Row(
+                        children: [
+                          // Icon container
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.pinkAccent,
+                                  Colors.pink,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.pink.withOpacity(0.4),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _getIconForSection(section.title),
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 14),
+                          
+                          // Başlık
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  section.title,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.3),
+                                        offset: Offset(0, 2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Container(
+                                  height: 3,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Colors.pinkAccent,
+                                        Colors.pink,
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      SizedBox(height: 20),
+                      
+                      // İçerik
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          section.content,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 15,
+                            height: 1.6,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+  IconData _getIconForSection(String title) {
+  final titleLower = title.toLowerCase();
+  
+  if (titleLower.contains('cilt tipi') || titleLower.contains('skin type')) {
+    return Icons.face_outlined;
+  } else if (titleLower.contains('nem') || titleLower.contains('hydration')) {
+    return Icons.water_drop_outlined;
+  } else if (titleLower.contains('akne') || titleLower.contains('acne')) {
+    return Icons.healing_outlined;
+  } else if (titleLower.contains('kırışıklık') || titleLower.contains('wrinkle')) {
+    return Icons.auto_fix_high;
+  } else if (titleLower.contains('gözenek') || titleLower.contains('pore')) {
+    return Icons.lens_blur_outlined;
+  } else if (titleLower.contains('leke') || titleLower.contains('spot')) {
+    return Icons.brightness_medium;
+  } else if (titleLower.contains('ton') || titleLower.contains('tone')) {
+    return Icons.palette_outlined;
+  } else if (titleLower.contains('öneri') || titleLower.contains('recommendation')) {
+    return Icons.lightbulb_outline;
+  } else if (titleLower.contains('ürün') || titleLower.contains('product')) {
+    return Icons.shopping_bag_outlined;
+  } else {
+    return Icons.auto_awesome_outlined;
   }
+}
 
   Widget _buildCenterText() {
     return Column(
@@ -1451,57 +2096,272 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
-  Widget _buildAnalyzeAgainButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _resetState,
-        icon: const Icon(Icons.refresh, color: Colors.white,size: 24,),
-        label: const Text(
-          'Tekrar Analiz Yap',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+Widget _buildAnalyzeAgainButton() {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Stack(
+      children: [
+        // Glow effect
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.pink.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          backgroundColor: Colors.pink,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-      ),
-    );
-  }
 
- Widget _buildSavedAnalyze() {
-  return Padding(
-    padding: const EdgeInsets.only(top: 15),
-    child: SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _analysisResult == null ? null : _saveCurrentAnalysis,
-        icon: const Icon(Icons.save_outlined, color: Colors.white, size: 24),
-        label: const Text(
-          'Analizi Kaydet',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+        // Main button (CLICK AREA)
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _resetState, // ✅ İlk koddaki işlem
+            borderRadius: BorderRadius.circular(20),
+            splashColor: Colors.pink.withOpacity(0.3),
+            highlightColor: Colors.pink.withOpacity(0.2),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF2D1B2E),
+                    Color(0xFF1A1A1A),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(
+                  color: Colors.pink.withOpacity(0.5),
+                  width: 2,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.pinkAccent,
+                          Colors.pink,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink.withOpacity(0.5),
+                          blurRadius: 8,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Text(
+                    'Tekrar Analiz Yap',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.4),
+                          offset: Offset(0, 2),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          backgroundColor: Colors.green[500],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+
+        // Highlight (tıklamayı engellememesi için ignoreEnabled)
+        IgnorePointer(
+          child: Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     ),
   );
 }
 
+
+Widget _buildSavedAnalyze() {
+  final bool isDisabled = _analysisResult == null;
+  
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Stack(
+      children: [
+        // Glow effect
+        if (!isDisabled)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        
+        // Main button
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: isDisabled
+                  ? [
+                      Color(0xFF1A1A1A),
+                      Color(0xFF0D0D0D),
+                    ]
+                  : [
+                      Color(0xFF1B2E1B), // Koyu yeşil
+                      Color(0xFF1A1A1A), // Koyu gri
+                    ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: isDisabled
+                  ? Colors.white.withOpacity(0.2)
+                  : Colors.green.withOpacity(0.5),
+              width: 2,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: isDisabled ? null : _saveCurrentAnalysis,
+              borderRadius: BorderRadius.circular(20),
+              splashColor: isDisabled ? Colors.transparent : Colors.green.withOpacity(0.3),
+              highlightColor: isDisabled ? Colors.transparent : Colors.green.withOpacity(0.2),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDisabled
+                              ? [
+                                  Colors.grey[700]!,
+                                  Colors.grey[800]!,
+                                ]
+                              : [
+                                  Colors.greenAccent,
+                                  Colors.green,
+                                ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: isDisabled
+                            ? []
+                            : [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.5),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                      ),
+                      child: Icon(
+                        Icons.bookmark_rounded,
+                        color: isDisabled ? Colors.white38 : Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Analizi Kaydet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDisabled ? Colors.white38 : Colors.white,
+                        letterSpacing: 0.5,
+                        shadows: isDisabled
+                            ? []
+                            : [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.4),
+                                  offset: Offset(0, 2),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        
+        // Üst gradient highlight
+        if (!isDisabled)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 50,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.white.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
 }

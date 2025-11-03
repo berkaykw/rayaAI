@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/profilepage_screen.dart';
 import 'package:raya_ai/widgets-tools/full_screen_image_viewer.dart';
@@ -93,12 +92,12 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey[900]!, Colors.black],
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.grey[900]!, Colors.black],
+          ),
         ),
-      ),
         child: SafeArea(
           child: FutureBuilder<List<_LocalAnalysisEntry>>(
             future: _entriesFuture,
@@ -108,51 +107,50 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                     child: CircularProgressIndicator(color: Colors.pinkAccent));
               }
               final entries = snapshot.data ?? [];
-        
+
               return SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                  Row(
-  children: [
-    IconButton(
-      icon: const Icon(
-        Icons.arrow_back_ios_new_rounded,
-        color: Colors.white70,
-        size: 22,
-      ),
-      onPressed: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ProfileScreen(),
-          ),
-        );
-      },
-    ),
-
-    Expanded(
-      child: Center(
-        child: Text(
-          'Geçmiş Analizler',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    ),
-    const SizedBox(width: 48), 
-  ],
-),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white70,
+                            size: 22,
+                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              'Geçmiş Analizler',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 48),
+                      ],
+                    ),
                     const SizedBox(height: 20),
                     if (entries.isEmpty)
                       Column(
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),  
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
@@ -274,51 +272,7 @@ class _AnalysisTile extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final String content;
-  const _SectionCard({required this.title, required this.content});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.08),
-            Colors.white.withOpacity(0.04),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: Colors.white.withOpacity(0.15), width: 1),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                  color: Colors.pinkAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              content,
-              style:
-                  TextStyle(color: Colors.white.withOpacity(0.85), height: 1.45),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// ❌ SİLİNDİ: Eski _SectionCard widget'ı buradan kaldırıldı.
 
 class _LocalAnalysisEntry {
   final String timestamp;
@@ -393,6 +347,211 @@ class _DeletePillButton extends StatelessWidget {
 class _AnalysisDetailPage extends StatelessWidget {
   final _LocalAnalysisEntry entry;
   const _AnalysisDetailPage({required this.entry});
+
+  // ✅ YENİ: Icon helper fonksiyonu buraya eklendi
+  IconData _getIconForSection(String title) {
+    final titleLower = title.toLowerCase();
+
+    if (titleLower.contains('cilt tipi') || titleLower.contains('skin type')) {
+      return Icons.face_outlined;
+    } else if (titleLower.contains('nem') || titleLower.contains('hydration')) {
+      return Icons.water_drop_outlined;
+    } else if (titleLower.contains('akne') || titleLower.contains('acne')) {
+      return Icons.healing_outlined;
+    } else if (titleLower.contains('kırışıklık') || titleLower.contains('wrinkle')) {
+      return Icons.auto_fix_high;
+    } else if (titleLower.contains('gözenek') || titleLower.contains('pore')) {
+      return Icons.lens_blur_outlined;
+    } else if (titleLower.contains('leke') || titleLower.contains('spot')) {
+      return Icons.brightness_medium;
+    } else if (titleLower.contains('ton') || titleLower.contains('tone')) {
+      return Icons.palette_outlined;
+    } else if (titleLower.contains('öneri') || titleLower.contains('recommendation')) {
+      return Icons.lightbulb_outline;
+    } else if (titleLower.contains('ürün') || titleLower.contains('product')) {
+      return Icons.shopping_bag_outlined;
+    } else {
+      return Icons.auto_awesome_outlined;
+    }
+  }
+
+  // ✅ YENİ: Yeni kart tasarımı fonksiyonu buraya eklendi
+  // ℹ️ DEĞİŞTİRİLDİ: Parametresi `_LocalSection` olarak güncellendi
+  Widget _buildAnalysisCard(_LocalSection section) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Stack(
+        children: [
+          // Arka plan glow efekti
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.pink.withOpacity(0.25),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Ana kart - Glass effect
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.12),
+                  Colors.white.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: Colors.pink.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                children: [
+                  // Pembe gradient overlay (üst köşe)
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      width: 150,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          colors: [
+                            Colors.pink.withOpacity(0.2),
+                            Colors.transparent,
+                          ],
+                          radius: 1.0,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // İçerik
+                  Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Başlık bölümü
+                        Row(
+                          children: [
+                            // Icon container
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.pinkAccent,
+                                    Colors.pink,
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.pink.withOpacity(0.4),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                _getIconForSection(section.title), // ℹ️ Değişiklik
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: 14),
+
+                            // Başlık
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    section.title, // ℹ️ Değişiklik
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                      shadows: [
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.3),
+                                          offset: Offset(0, 2),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Container(
+                                    height: 3,
+                                    width: 40,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.pinkAccent,
+                                          Colors.pink,
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: 20),
+
+                        // İçerik
+                        Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            section.content, // ℹ️ Değişiklik
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 15,
+                              height: 1.6,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -487,8 +646,10 @@ class _AnalysisDetailPage extends StatelessWidget {
                       ),
                     ),
                   const SizedBox(height: 16),
-                  // Sections
-                  ...entry.sections.map((s) => _SectionCard(title: s.title, content: s.content)).toList(),
+                  
+                  // ✅ DEĞİŞTİRİLDİ: Eski kart listesi yeni fonksiyonla değiştirildi
+                  ...entry.sections.map((s) => _buildAnalysisCard(s)).toList(),
+                  
                   const SizedBox(height: 16),
                 ],
               ),
