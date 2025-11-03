@@ -37,7 +37,7 @@ class ApiService {
   }
 
   /// Resim URL'sini, kullanıcı ID'sini ve ürün tercihlerini analiz eder
-  Future<List<AnalysisSection>> analyzeImageUrl(
+  Future<SkinAnalysisResult> analyzeImageUrl(
     String imageUrl,
     String userId,
     bool includeProducts, // <-- YENİ PARAMETRE
@@ -63,12 +63,22 @@ class ApiService {
           
       if (response.statusCode == 200) {
         final List<dynamic> decodedBody = jsonDecode(response.body);
-        final Map<String, dynamic> outputMap = decodedBody[0]['output'];
-
-        return outputMap.entries
-            .map((entry) => AnalysisSection(
-                title: entry.key, content: entry.value.toString()))
-            .toList();
+        
+        // Yeni format: [{"output": {"output": {...}}}]
+        if (decodedBody.isNotEmpty && decodedBody[0]['output'] != null) {
+          final Map<String, dynamic> outputData = decodedBody[0]['output'];
+          
+          // İç içe output yapısı var mı kontrol et
+          if (outputData['output'] != null) {
+            final Map<String, dynamic> innerOutput = outputData['output'] as Map<String, dynamic>;
+            return SkinAnalysisResult.fromJson(innerOutput);
+          } else {
+            // Direkt output içinde ise
+            return SkinAnalysisResult.fromJson(outputData);
+          }
+        } else {
+          throw Exception('API yanıt formatı beklenmedik şekilde.');
+        }
       } else {
         throw Exception('API Hatası: ${response.statusCode} - ${response.body}');
       }
@@ -80,7 +90,7 @@ class ApiService {
   }
 
   /// Galeriden seçilen resmi yükleyip analiz eder (tek fonksiyon)
-  Future<List<AnalysisSection>> analyzeImageFromGallery(
+  Future<SkinAnalysisResult> analyzeImageFromGallery(
     File imageFile,
     String userId,
     bool includeProducts, // <-- YENİ PARAMETRE
