@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/ProductCompatibilityTest.dart';
+import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
@@ -48,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       targetPage = const AnalysisScreen();
       break;
     case 2:
-      targetPage = const ProfileScreen();
+      targetPage = const ProductAddScreen();
       break;
     default:
       return;

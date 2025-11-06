@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:raya_ai/screens/ProductCompatibilityTest.dart';
+import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/profilepage_screen.dart';
 import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 import '../services/api_service.dart';
@@ -106,7 +107,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       targetPage = const AnalysisScreen();
       break;
     case 2:
-      targetPage = const ProfileScreen();
+      targetPage = const ProductAddScreen();
       break;
     default:
       return;

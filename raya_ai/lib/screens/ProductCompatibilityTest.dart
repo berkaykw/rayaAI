@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io'; // File kullanımı için eklendi
 import 'package:flutter/material.dart';
+import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
-import 'package:raya_ai/screens/profilepage_screen.dart';
 import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 import 'package:raya_ai/models/analysis_model.dart';
 import 'dart:async';
@@ -146,7 +146,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
         targetPage = const AnalysisScreen();
         break;
       case 2:
-        targetPage = const ProfileScreen();
+        targetPage = const ProductAddScreen();
         break;
       default:
         return;
