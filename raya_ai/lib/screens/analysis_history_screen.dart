@@ -17,6 +17,7 @@ class AnalysisHistoryScreen extends StatefulWidget {
 class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
   late Future<List<_LocalAnalysisEntry>> _entriesFuture;
 
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +55,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
               backgroundColor: MaterialStateProperty.all(Colors.red),
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil', style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold)),
+            child: const Text('Sil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -67,7 +68,6 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
     final storageKey = 'analyses_${user.id}';
     final List<String> encodedList = prefs.getStringList(storageKey) ?? [];
 
-    // Remove first item that matches timestamp (unique per save)
     final int indexToRemove = encodedList.indexWhere((encoded) {
       try {
         final Map<String, dynamic> map = jsonDecode(encoded) as Map<String, dynamic>;
@@ -181,7 +181,18 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final entry = entries[index];
-                          return _AnalysisTile(entry: entry, onDelete: () => _deleteEntry(entry));
+                          return _AnalysisTile(
+                            entry: entry,
+                            onDelete: () => _deleteEntry(entry),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => _AnalysisDetailPage(entry: entry),
+                                ),
+                              );
+                            },
+                          );
                         },
                       ),
                   ],
@@ -198,7 +209,13 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
 class _AnalysisTile extends StatelessWidget {
   final _LocalAnalysisEntry entry;
   final VoidCallback onDelete;
-  const _AnalysisTile({required this.entry, required this.onDelete});
+  final VoidCallback onTap;
+  
+  const _AnalysisTile({
+    required this.entry,
+    required this.onDelete,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -225,14 +242,7 @@ class _AnalysisTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            (context),
-            MaterialPageRoute(
-              builder: (context) => _AnalysisDetailPage(entry: entry),
-            ),
-          );
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -273,14 +283,12 @@ class _AnalysisTile extends StatelessWidget {
   }
 }
 
-// ❌ SİLİNDİ: Eski _SectionCard widget'ı buradan kaldırıldı.
-
 class _LocalAnalysisEntry {
   final String timestamp;
   final String? imagePath;
   final String? imageUrl;
-  final List<_LocalSection>? sections; // Eski format için
-  final SkinAnalysisResult? analysis; // Yeni format için
+  final List<_LocalSection>? sections;
+  final SkinAnalysisResult? analysis;
 
   _LocalAnalysisEntry({
     required this.timestamp,
@@ -291,7 +299,6 @@ class _LocalAnalysisEntry {
   });
 
   factory _LocalAnalysisEntry.fromJson(Map<String, dynamic> json) {
-    // Yeni format kontrolü
     if (json['analysis'] != null) {
       return _LocalAnalysisEntry(
         timestamp: json['timestamp'] as String? ?? '',
@@ -301,7 +308,6 @@ class _LocalAnalysisEntry {
       );
     }
     
-    // Eski format (geriye dönük uyumluluk)
     final List sectionsJson = json['sections'] as List? ?? [];
     return _LocalAnalysisEntry(
       timestamp: json['timestamp'] as String? ?? '',
@@ -376,214 +382,21 @@ class _DeletePillButton extends StatelessWidget {
   }
 }
 
-class _AnalysisDetailPage extends StatelessWidget {
+class _AnalysisDetailPage extends StatefulWidget {
   final _LocalAnalysisEntry entry;
   const _AnalysisDetailPage({required this.entry});
 
-  // ✅ YENİ: Icon helper fonksiyonu buraya eklendi
-  IconData _getIconForSection(String title) {
-    final titleLower = title.toLowerCase();
+  @override
+  State<_AnalysisDetailPage> createState() => _AnalysisDetailPageState();
+}
 
-    if (titleLower.contains('cilt tipi') || titleLower.contains('skin type')) {
-      return Icons.face_outlined;
-    } else if (titleLower.contains('nem') || titleLower.contains('hydration')) {
-      return Icons.water_drop_outlined;
-    } else if (titleLower.contains('akne') || titleLower.contains('acne')) {
-      return Icons.healing_outlined;
-    } else if (titleLower.contains('kırışıklık') || titleLower.contains('wrinkle')) {
-      return Icons.auto_fix_high;
-    } else if (titleLower.contains('gözenek') || titleLower.contains('pore')) {
-      return Icons.lens_blur_outlined;
-    } else if (titleLower.contains('leke') || titleLower.contains('spot')) {
-      return Icons.brightness_medium;
-    } else if (titleLower.contains('ton') || titleLower.contains('tone')) {
-      return Icons.palette_outlined;
-    } else if (titleLower.contains('öneri') || titleLower.contains('recommendation')) {
-      return Icons.lightbulb_outline;
-    } else if (titleLower.contains('ürün') || titleLower.contains('product')) {
-      return Icons.shopping_bag_outlined;
-    } else {
-      return Icons.auto_awesome_outlined;
-    }
-  }
-
-  // ✅ YENİ: Yeni kart tasarımı fonksiyonu buraya eklendi
-  // ℹ️ DEĞİŞTİRİLDİ: Parametresi `_LocalSection` olarak güncellendi
-  Widget _buildAnalysisCard(_LocalSection section) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Stack(
-        children: [
-          // Arka plan glow efekti
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.pink.withOpacity(0.25),
-                    blurRadius: 20,
-                    spreadRadius: 0,
-                    offset: Offset(0, 8),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Ana kart - Glass effect
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withOpacity(0.12),
-                  Colors.white.withOpacity(0.05),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                color: Colors.pink.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                children: [
-                  // Pembe gradient overlay (üst köşe)
-                  Positioned(
-                    top: 0,
-                    right: 0,
-                    child: Container(
-                      width: 150,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            Colors.pink.withOpacity(0.2),
-                            Colors.transparent,
-                          ],
-                          radius: 1.0,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // İçerik
-                  Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Başlık bölümü
-                        Row(
-                          children: [
-                            // Icon container
-                            Container(
-                              padding: EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Colors.pinkAccent,
-                                    Colors.pink,
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.pink.withOpacity(0.4),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                _getIconForSection(section.title), // ℹ️ Değişiklik
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            SizedBox(width: 14),
-
-                            // Başlık
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    section.title, // ℹ️ Değişiklik
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          offset: Offset(0, 2),
-                                          blurRadius: 4,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Container(
-                                    height: 3,
-                                    width: 40,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.pinkAccent,
-                                          Colors.pink,
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 20),
-
-                        // İçerik
-                        Container(
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
-                              width: 1,
-                            ),
-                          ),
-                          child: Text(
-                            section.content, // ℹ️ Değişiklik
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 15,
-                              height: 1.6,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
+  // Genişletme state'leri
+  bool _isSabahRutiniExpanded = false;
+  bool _isAksamRutiniExpanded = false;
+  bool _isMakyajOnerileriExpanded = false;
+  bool _isNotlarIpuclariExpanded = false;
+  bool _isKapanisNotuExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -626,64 +439,22 @@ class _AnalysisDetailPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Image first (tap to open full screen viewer)
-                  if (entry.imagePath != null && entry.imagePath!.isNotEmpty && File(entry.imagePath!).existsSync())
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FullScreenImageViewer(
-                              imagePath: entry.imagePath!,
-                              isLocalFile: true,
-                            ),
-                          ),
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Hero(
-                          tag: entry.imagePath!,
-                          child: Image.file(
-                            File(entry.imagePath!),
-                            height: 220,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    )
-                  else if (entry.imageUrl != null && entry.imageUrl!.isNotEmpty)
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => FullScreenImageViewer(
-                              imageUrl: entry.imageUrl!,
-                              isLocalFile: false,
-                            ),
-                          ),
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Hero(
-                          tag: entry.imageUrl!,
-                          child: Image.network(
-                            entry.imageUrl!,
-                            height: 220,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
+                  
+                  // Resim gösterimi - Modern tasarım
+                  if (widget.entry.imagePath != null || widget.entry.imageUrl != null)
+                    _buildImageSection(),
+                  
                   const SizedBox(height: 16),
                   
-                  // Analiz sonuçları - yeni ve eski format desteği
-                  if (entry.analysis != null)
-                    _buildAnalysisResults(entry.analysis!)
-                  else if (entry.sections != null)
-                    ...entry.sections!.map((s) => _buildAnalysisCard(s)).toList(),
+                  // Analiz sonuçları
+                  if (widget.entry.analysis != null)
+                    _buildAnalysisResults(widget.entry.analysis!)
+                  else if (widget.entry.sections != null)
+                    ...widget.entry.sections!.map((s) => _buildAnalysisCard(
+                      title: s.title,
+                      content: s.content,
+                      icon: _getIconForSection(s.title),
+                    )).toList(),
                   
                   const SizedBox(height: 16),
                 ],
@@ -695,19 +466,280 @@ class _AnalysisDetailPage extends StatelessWidget {
     );
   }
 
-  // Yeni format için analiz sonuçlarını göster
+  Widget _buildImageSection() {
+    final hasLocalFile = widget.entry.imagePath != null && 
+                         widget.entry.imagePath!.isNotEmpty && 
+                         File(widget.entry.imagePath!).existsSync();
+    final hasNetworkImage = widget.entry.imageUrl != null && widget.entry.imageUrl!.isNotEmpty;
+
+    if (!hasLocalFile && !hasNetworkImage) return SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      child: Stack(
+        children: [
+          // Glow effect
+          Positioned.fill(
+            child: Container(
+              margin: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.pink.withOpacity(0.3),
+                    blurRadius: 30,
+                    spreadRadius: 0,
+                    offset: Offset(0, 10),
+                  ),
+                  BoxShadow(
+                    color: Colors.purple.withOpacity(0.2),
+                    blurRadius: 40,
+                    spreadRadius: 0,
+                    offset: Offset(0, 15),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Ana container
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: Colors.pink.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            padding: EdgeInsets.all(8),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Stack(
+                children: [
+                  // Resim
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FullScreenImageViewer(
+                            imageUrl: widget.entry.imageUrl,
+                            imagePath: widget.entry.imagePath,
+                            isLocalFile: hasLocalFile,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Hero(
+                      tag: widget.entry.imagePath ?? widget.entry.imageUrl ?? '',
+                      child: hasLocalFile
+                          ? Image.file(
+                              File(widget.entry.imagePath!),
+                              height: 240,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                          : Image.network(
+                              widget.entry.imageUrl!,
+                              height: 240,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                height: 240,
+                                decoration: BoxDecoration(
+                                  color: Colors.black26,
+                                  borderRadius: BorderRadius.circular(18),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.white54,
+                                    size: 50,
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ),
+                  
+                  // Alt gradient overlay
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: 100,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.7),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Sağ üst badge
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.green.withOpacity(0.9),
+                            Colors.greenAccent.withOpacity(0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.green.withOpacity(0.4),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Analiz Tamamlandı',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // Sol alt - Büyütme butonu
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageViewer(
+                                  imageUrl: widget.entry.imageUrl,
+                                  imagePath: widget.entry.imagePath,
+                                  isLocalFile: hasLocalFile,
+                                ),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.zoom_in_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Büyüt',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Üst sağ accent glow
+          Positioned(
+            top: -30,
+            right: -30,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.pink.withOpacity(0.15),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildAnalysisResults(SkinAnalysisResult result) {
     return Column(
       children: [
-        // Giriş mesajı
+        // Giriş - AÇIK
         if (result.giris != null)
-          _buildAnalysisCardNew(
+          _buildAnalysisCard(
             title: 'Hoş Geldiniz',
             content: result.giris!,
             icon: Icons.waving_hand,
           ),
         
-        // Bütüncül Cilt Analizi
+        // Bütüncül Cilt Analizi - AÇIK
         if (result.butunculCiltAnalizi != null)
           _buildButunculCiltAnaliziCard(result.butunculCiltAnalizi!),
         
@@ -715,27 +747,56 @@ class _AnalysisDetailPage extends StatelessWidget {
         if (result.kisisellestirilmisBakimPlani != null)
           _buildBakimPlaniCard(result.kisisellestirilmisBakimPlani!),
         
-        // Makyaj ve Renk Önerileri
+        // Makyaj Önerileri - GENİŞLETİLEBİLİR
         if (result.makyajRenkOnerileri != null)
-          _buildMakyajOnerileriCard(result.makyajRenkOnerileri!),
+          _buildExpandableRoutineCard(
+            title: result.makyajRenkOnerileri!.baslik ?? 'Makyaj ve Renk Önerileri',
+            icon: Icons.brush_outlined,
+            gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+            isExpanded: _isMakyajOnerileriExpanded,
+            onTap: () {
+              setState(() {
+                _isMakyajOnerileriExpanded = !_isMakyajOnerileriExpanded;
+              });
+            },
+            content: _buildMakyajOnerileriContent(result.makyajRenkOnerileri!),
+          ),
         
-        // Önemli Notlar ve İpuçları
+        // Notlar ve İpuçları - GENİŞLETİLEBİLİR
         if (result.onemliNotlarIpuclari != null)
-          _buildNotlarIpuclariCard(result.onemliNotlarIpuclari!),
+          _buildExpandableRoutineCard(
+            title: result.onemliNotlarIpuclari!.baslik ?? 'Önemli Notlar ve İpuçları',
+            icon: Icons.lightbulb_outline,
+            gradient: [Colors.yellow.withOpacity(0.2), Colors.yellowAccent.withOpacity(0.4)],
+            isExpanded: _isNotlarIpuclariExpanded,
+            onTap: () {
+              setState(() {
+                _isNotlarIpuclariExpanded = !_isNotlarIpuclariExpanded;
+              });
+            },
+            content: _buildNotlarIpuclariContent(result.onemliNotlarIpuclari!),
+          ),
         
-        // Kapanış Notu
+        // Kapanış - GENİŞLETİLEBİLİR
         if (result.kapanisNotu != null)
-          _buildAnalysisCardNew(
+          _buildExpandableRoutineCard(
             title: 'Kapanış',
-            content: result.kapanisNotu!,
             icon: Icons.favorite,
+            gradient: [Colors.deepPurple.withOpacity(0.2), Colors.deepPurple.withOpacity(0.4)],
+            isExpanded: _isKapanisNotuExpanded,
+            onTap: () {
+              setState(() {
+                _isKapanisNotuExpanded = !_isKapanisNotuExpanded;
+              });
+            },
+            content: result.kapanisNotu!,
           ),
       ],
     );
   }
 
   Widget _buildButunculCiltAnaliziCard(ButunculCiltAnalizi analiz) {
-    return _buildAnalysisCardNew(
+    return _buildAnalysisCard(
       title: analiz.baslik ?? 'Bütüncül Cilt Analizi',
       content: _buildButunculCiltAnaliziContent(analiz),
       icon: Icons.face_outlined,
@@ -770,7 +831,7 @@ class _AnalysisDetailPage extends StatelessWidget {
       buffer.writeln('');
     }
     
-    if (analiz.mevcutRutinDegerlendirmesi != null) {
+          if (analiz.mevcutRutinDegerlendirmesi != null) {
       buffer.writeln('🔍 Mevcut Rutin Değerlendirmesi:');
       if (analiz.mevcutRutinDegerlendirmesi!.ciltTipiVeTemizlikYorumu != null) {
         buffer.writeln('• ${analiz.mevcutRutinDegerlendirmesi!.ciltTipiVeTemizlikYorumu}');
@@ -784,70 +845,99 @@ class _AnalysisDetailPage extends StatelessWidget {
   }
 
   Widget _buildBakimPlaniCard(KisisellestirilmisBakimPlani plan) {
-    return _buildAnalysisCardNew(
-      title: plan.baslik ?? 'Kişiselleştirilmiş Bakım Planı',
-      content: _buildBakimPlaniContent(plan),
-      icon: Icons.spa_outlined,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          // Ana başlık kartı
+          _buildAnalysisCard(
+            title: plan.baslik ?? 'Kişiselleştirilmiş Bakım Planı',
+            content: plan.oncelikliHedef != null 
+                ? '🎯 Öncelikli Hedef:\n${plan.oncelikliHedef}' 
+                : '',
+            icon: Icons.spa_outlined,
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Sabah Rutini
+          if (plan.sabahRutini != null)
+            _buildExpandableRoutineCard(
+              title: plan.sabahRutini!.baslik ?? 'Sabah Rutini',
+              icon: Icons.wb_sunny_outlined,
+              gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+              isExpanded: _isSabahRutiniExpanded,
+              onTap: () {
+                setState(() {
+                  _isSabahRutiniExpanded = !_isSabahRutiniExpanded;
+                });
+              },
+              content: _buildSabahRutiniContent(plan.sabahRutini!),
+            ),
+          
+          const SizedBox(height: 12),
+          
+          // Akşam Rutini
+          if (plan.aksamRutini != null)
+            _buildExpandableRoutineCard(
+              title: plan.aksamRutini!.baslik ?? 'Akşam Rutini',
+              icon: Icons.nightlight_round,
+              gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+              isExpanded: _isAksamRutiniExpanded,
+              onTap: () {
+                setState(() {
+                  _isAksamRutiniExpanded = !_isAksamRutiniExpanded;
+                });
+              },
+              content: _buildAksamRutiniContent(plan.aksamRutini!),
+            ),
+        ],
+      ),
     );
   }
 
-  String _buildBakimPlaniContent(KisisellestirilmisBakimPlani plan) {
+  String _buildSabahRutiniContent(dynamic sabahRutini) {
     final buffer = StringBuffer();
     
-    if (plan.oncelikliHedef != null) {
-      buffer.writeln('🎯 Öncelikli Hedef:');
-      buffer.writeln('${plan.oncelikliHedef}');
-      buffer.writeln('');
+    if (sabahRutini.adim1Temizleme != null) {
+      buffer.writeln('1️⃣ Temizleme\n${sabahRutini.adim1Temizleme}\n');
+    }
+    if (sabahRutini.adim2Serum != null) {
+      buffer.writeln('2️⃣ Serum\n${sabahRutini.adim2Serum}\n');
+    }
+    if (sabahRutini.adim3Nemlendirme != null) {
+      buffer.writeln('3️⃣ Nemlendirme\n${sabahRutini.adim3Nemlendirme}\n');
+    }
+    if (sabahRutini.adim4Koruma != null) {
+      buffer.writeln('4️⃣ Koruma\n${sabahRutini.adim4Koruma}');
     }
     
-    if (plan.sabahRutini != null) {
-      buffer.writeln('🌅 ${plan.sabahRutini!.baslik ?? "Sabah Rutini"}:');
-      if (plan.sabahRutini!.adim1Temizleme != null) {
-        buffer.writeln('1️⃣ Temizleme: ${plan.sabahRutini!.adim1Temizleme}');
-      }
-      if (plan.sabahRutini!.adim2Serum != null) {
-        buffer.writeln('2️⃣ Serum: ${plan.sabahRutini!.adim2Serum}');
-      }
-      if (plan.sabahRutini!.adim3Nemlendirme != null) {
-        buffer.writeln('3️⃣ Nemlendirme: ${plan.sabahRutini!.adim3Nemlendirme}');
-      }
-      if (plan.sabahRutini!.adim4Koruma != null) {
-        buffer.writeln('4️⃣ Koruma: ${plan.sabahRutini!.adim4Koruma}');
-      }
-      buffer.writeln('');
-    }
-    
-    if (plan.aksamRutini != null) {
-      buffer.writeln('🌙 ${plan.aksamRutini!.baslik ?? "Akşam Rutini"}:');
-      if (plan.aksamRutini!.adim1CiftAsamaliTemizlemeYag != null) {
-        buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Yağ): ${plan.aksamRutini!.adim1CiftAsamaliTemizlemeYag}');
-      }
-      if (plan.aksamRutini!.adim1CiftAsamaliTemizlemeSu != null) {
-        buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Su): ${plan.aksamRutini!.adim1CiftAsamaliTemizlemeSu}');
-      }
-      if (plan.aksamRutini!.adim2Tonik != null) {
-        buffer.writeln('2️⃣ Tonik: ${plan.aksamRutini!.adim2Tonik}');
-      }
-      if (plan.aksamRutini!.adim3TedaviSerumu != null) {
-        buffer.writeln('3️⃣ Tedavi Serumu: ${plan.aksamRutini!.adim3TedaviSerumu}');
-      }
-      if (plan.aksamRutini!.adim4Nemlendirme != null) {
-        buffer.writeln('4️⃣ Nemlendirme: ${plan.aksamRutini!.adim4Nemlendirme}');
-      }
-      if (plan.aksamRutini!.ekAdimGozKremi != null) {
-        buffer.writeln('✨ Ek Adım - Göz Kremi: ${plan.aksamRutini!.ekAdimGozKremi}');
-      }
-    }
-    
-    return buffer.toString();
+    return buffer.toString().trim();
   }
 
-  Widget _buildMakyajOnerileriCard(MakyajRenkOnerileri oneriler) {
-    return _buildAnalysisCardNew(
-      title: oneriler.baslik ?? 'Makyaj ve Renk Önerileri',
-      content: _buildMakyajOnerileriContent(oneriler),
-      icon: Icons.brush_outlined,
-    );
+  String _buildAksamRutiniContent(dynamic aksamRutini) {
+    final buffer = StringBuffer();
+    
+    if (aksamRutini.adim1CiftAsamaliTemizlemeYag != null) {
+      buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Yağ)\n${aksamRutini.adim1CiftAsamaliTemizlemeYag}\n');
+    }
+    if (aksamRutini.adim1CiftAsamaliTemizlemeSu != null) {
+      buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Su)\n${aksamRutini.adim1CiftAsamaliTemizlemeSu}\n');
+    }
+    if (aksamRutini.adim2Tonik != null) {
+      buffer.writeln('2️⃣ Tonik\n${aksamRutini.adim2Tonik}\n');
+    }
+    if (aksamRutini.adim3TedaviSerumu != null) {
+      buffer.writeln('3️⃣ Tedavi Serumu\n${aksamRutini.adim3TedaviSerumu}\n');
+    }
+    if (aksamRutini.adim4Nemlendirme != null) {
+      buffer.writeln('4️⃣ Nemlendirme\n${aksamRutini.adim4Nemlendirme}\n');
+    }
+    if (aksamRutini.ekAdimGozKremi != null) {
+      buffer.writeln('✨ Ek Adım - Göz Kremi\n${aksamRutini.ekAdimGozKremi}');
+    }
+    
+    return buffer.toString().trim();
   }
 
   String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
@@ -869,15 +959,7 @@ class _AnalysisDetailPage extends StatelessWidget {
       }
     }
     
-    return buffer.toString();
-  }
-
-  Widget _buildNotlarIpuclariCard(OnemliNotlarIpuclari notlar) {
-    return _buildAnalysisCardNew(
-      title: notlar.baslik ?? 'Önemli Notlar ve İpuçları',
-      content: _buildNotlarIpuclariContent(notlar),
-      icon: Icons.lightbulb_outline,
-    );
+    return buffer.toString().trim();
   }
 
   String _buildNotlarIpuclariContent(OnemliNotlarIpuclari notlar) {
@@ -900,10 +982,184 @@ class _AnalysisDetailPage extends StatelessWidget {
       buffer.writeln('${notlar.yasamTarziIpucu}');
     }
     
-    return buffer.toString();
+    return buffer.toString().trim();
   }
 
-  Widget _buildAnalysisCardNew({
+  Widget _buildExpandableRoutineCard({
+    required String title,
+    required IconData icon,
+    required List<Color> gradient,
+    required bool isExpanded,
+    required VoidCallback onTap,
+    required String content,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Stack(
+        children: [
+          // Glow effect
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: gradient[0].withOpacity(0.3),
+                    blurRadius: 20,
+                    spreadRadius: 0,
+                    offset: Offset(0, 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          // Ana kart
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                colors: [
+                  Colors.white.withOpacity(0.12),
+                  Colors.white.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              border: Border.all(
+                color: gradient[0].withOpacity(0.4),
+                width: 1.5,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Column(
+                children: [
+                  // Tıklanabilir başlık
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onTap,
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(24),
+                        bottom: isExpanded ? Radius.zero : Radius.circular(24),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: gradient,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: gradient[0].withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                icon,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            SizedBox(width: 14),
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black.withOpacity(0.3),
+                                      offset: Offset(0, 2),
+                                      blurRadius: 4,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            AnimatedRotation(
+                              turns: isExpanded ? 0.5 : 0,
+                              duration: Duration(milliseconds: 300),
+                              child: Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  // Genişletilebilir içerik
+                  AnimatedSize(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: Container(
+                      height: isExpanded ? null : 0,
+                      child: AnimatedOpacity(
+                        duration: Duration(milliseconds: 250),
+                        opacity: isExpanded ? 1.0 : 0.0,
+                        child: isExpanded
+                            ? Container(
+                                padding: EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.2),
+                                  border: Border(
+                                    top: BorderSide(
+                                      color: Colors.white.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                child: Text(
+                                  content,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 15,
+                                    height: 1.6,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              )
+                            : SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalysisCard({
     required String title,
     required String content,
     required IconData icon,
@@ -912,7 +1168,7 @@ class _AnalysisDetailPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: Stack(
         children: [
-          // Arka plan glow efekti
+          // Glow effect
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -929,7 +1185,7 @@ class _AnalysisDetailPage extends StatelessWidget {
             ),
           ),
           
-          // Ana kart - Glass effect
+          // Ana kart
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -950,7 +1206,7 @@ class _AnalysisDetailPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: Stack(
                 children: [
-                  // Pembe gradient overlay (üst köşe)
+                  // Gradient overlay
                   Positioned(
                     top: 0,
                     right: 0,
@@ -975,10 +1231,8 @@ class _AnalysisDetailPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Başlık bölümü
                         Row(
                           children: [
-                            // Icon container
                             Container(
                               padding: EdgeInsets.all(10),
                               decoration: BoxDecoration(
@@ -1006,8 +1260,6 @@ class _AnalysisDetailPage extends StatelessWidget {
                               ),
                             ),
                             SizedBox(width: 14),
-                            
-                            // Başlık
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1047,10 +1299,7 @@ class _AnalysisDetailPage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        
                         SizedBox(height: 20),
-                        
-                        // İçerik
                         Container(
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -1081,5 +1330,31 @@ class _AnalysisDetailPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getIconForSection(String title) {
+    final titleLower = title.toLowerCase();
+
+    if (titleLower.contains('cilt tipi') || titleLower.contains('skin type')) {
+      return Icons.face_outlined;
+    } else if (titleLower.contains('nem') || titleLower.contains('hydration')) {
+      return Icons.water_drop_outlined;
+    } else if (titleLower.contains('akne') || titleLower.contains('acne')) {
+      return Icons.healing_outlined;
+    } else if (titleLower.contains('kırışıklık') || titleLower.contains('wrinkle')) {
+      return Icons.auto_fix_high;
+    } else if (titleLower.contains('gözenek') || titleLower.contains('pore')) {
+      return Icons.lens_blur_outlined;
+    } else if (titleLower.contains('leke') || titleLower.contains('spot')) {
+      return Icons.brightness_medium;
+    } else if (titleLower.contains('ton') || titleLower.contains('tone')) {
+      return Icons.palette_outlined;
+    } else if (titleLower.contains('öneri') || titleLower.contains('recommendation')) {
+      return Icons.lightbulb_outline;
+    } else if (titleLower.contains('ürün') || titleLower.contains('product')) {
+      return Icons.shopping_bag_outlined;
+    } else {
+      return Icons.auto_awesome_outlined;
+    }
   }
 }

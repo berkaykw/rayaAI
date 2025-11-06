@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raya_ai/screens/ProductCompatibilityTest.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
@@ -6,6 +7,7 @@ import 'package:raya_ai/widgets-tools/privacy_security_screen.dart';
 import 'package:raya_ai/widgets-tools/skin_profile_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -21,11 +23,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? userEmail;
   bool isLoading = true;
 
+  int _selectedIndex = 2;
+
   @override
   void initState() {
     super.initState();
     _loadUserData();
   }
+
+  void _onItemTapped(int index) {
+  if (_selectedIndex == index) return; // aynı sayfaya tıklarsa yeniden yükleme
+
+  setState(() {
+    _selectedIndex = index;
+  });
+
+  Widget targetPage;
+
+  switch (index) {
+    case 0:
+      targetPage = const ProductCompatibilityTest();
+      break;
+    case 1:
+      targetPage = const AnalysisScreen();
+      break;
+    case 2:
+      targetPage = const ProfileScreen();
+      break;
+    default:
+      return;
+  }
+
+  Navigator.pushReplacement(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (_, __, ___) => targetPage,
+      transitionDuration: const Duration(milliseconds: 350),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+    ),
+  );
+}
 
   Future<void> _loadUserData() async {
     try {
@@ -112,255 +154,267 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child:
             isLoading
                 ? Center(child: CircularProgressIndicator(color: Colors.pink))
-                : SafeArea(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 20,
-                      ),
-                      child: Column(
-                        children: [
-                          Align(
-                            alignment: Alignment.topLeft,
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: Colors.white70,
-                                size: 22,
-                              ),
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const AnalysisScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          // Profile Header
-                          _buildProfileHeader(),
-
-                          SizedBox(height: 40),
-
-                          // Profile Options
-                          _buildProfileOption(
-  icon: Icons.person_outline,
-  title: "Ad Değiştir",
-  onTap: () {
-    TextEditingController _nameController = TextEditingController(text: userName);
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Color(0xFF2A2A2A),
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Color(0xFF2A2A2A),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
-                  blurRadius: 15,
-                  offset: Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "İsmini Değiştir",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white, // Sabit renk
-                  ),
-                ),
-                const SizedBox(height: 15),
-                TextField(
-                  controller: _nameController,
-                  style: TextStyle(
-                     color: Colors.white, // Yazı rengi
-                     fontSize: 16,
-                    ),
-                  decoration: InputDecoration(
-                    hintText: "Yeni isim girin",
-                    filled: true,
-                    fillColor: Colors.black54, // Sabit renk
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                : Stack(
                   children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: Text(
-                        "İptal",
-                        style: TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    SafeArea(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          child: Column(
+                            children: [
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white70,
+                                    size: 22,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const AnalysisScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              // Profile Header
+                              _buildProfileHeader(),
+                    
+                              SizedBox(height: 40),
+                    
+                              // Profile Options
+                              _buildProfileOption(
+                      icon: Icons.person_outline,
+                      title: "Ad Değiştir",
+                      onTap: () {
+                        TextEditingController _nameController = TextEditingController(text: userName);
+                    
+                        showDialog(
+                          context: context,
+                          builder: (context) => Dialog(
+                            backgroundColor: Color(0xFF2A2A2A),
+                            child: SingleChildScrollView(
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2A2A2A),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: Offset(0, 5),
+                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                    Text(
+                      "İsmini Değiştir",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white, // Sabit renk
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-  onPressed: () async {
-    final newName = _nameController.text.trim();
-    final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
-    if (newName.length > 16) {
-    _showError("İsim en fazla 16 karakter olabilir.");
-    return;
-    }
-    if (newName.isNotEmpty && user != null) {
-      try {
-        // 1. ADIM: Authentication meta verisini güncelle
-        // Bu, gelecekteki trigger'lar veya fonksiyonlar için
-        // "ana kaynak" olarak kalır.
-        await supabase.auth.updateUser(
-          UserAttributes(
-            data: {'user_name': newName},
-          ),
-        );
-
-      // 2. ADIM: "user_skin_profiles" tablosundaki veriyi güncelle
-        // (Eski kodunuzda 'profiles' yazıyordu, düzelttik)
-        await supabase
-            .from('user_skin_profiles') // <-- DÜZELTME BURADA
-            .update({'user_name': newName})
-            .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
-
-        if (mounted) {
-          setState(() {
-            userName = newName;
-          });
-          Navigator.of(context).pop();
-          _showSuccess('İsim başarıyla güncellendi');
-        }
-      } catch (e) {
-        if (mounted) {
-          Navigator.of(context).pop();
-          _showError('İsim güncellenemedi: $e');
-        }
-      }
-    }
-  },
-
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.greenAccent[400],
-                        shape: RoundedRectangleBorder(
+                    const SizedBox(height: 15),
+                    TextField(
+                      controller: _nameController,
+                      style: TextStyle(
+                         color: Colors.white, // Yazı rengi
+                         fontSize: 16,
+                        ),
+                      decoration: InputDecoration(
+                        hintText: "Yeni isim girin",
+                        filled: true,
+                        fillColor: Colors.black54, // Sabit renk
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
                         ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                      child: Text(
-                        "Kaydet",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 16,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  },),
-
-
-                          SizedBox(height: 12),
-                          _buildProfileOption(
-                        icon: Icons.spa_outlined, // Güzel bir ikon
-                        title: 'Cilt Profilim',
-                        onTap: () {
-                          // Birazdan oluşturacağımız yeni sayfaya yönlendir
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SkinProfileDetailsScreen(),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            "İptal",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
-                        },
-                      ),
-                      SizedBox(height: 12),
-                          _buildProfileOption(
-                            icon: Icons.history,
-                            title: 'Geçmiş Analizler',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                      onPressed: () async {
+                        final newName = _nameController.text.trim();
+                        final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
+                        if (newName.length > 16) {
+                        _showError("İsim en fazla 16 karakter olabilir.");
+                        return;
+                        }
+                        if (newName.isNotEmpty && user != null) {
+                          try {
+                            // 1. ADIM: Authentication meta verisini güncelle
+                            // Bu, gelecekteki trigger'lar veya fonksiyonlar için
+                            // "ana kaynak" olarak kalır.
+                            await supabase.auth.updateUser(
+                              UserAttributes(
+                                data: {'user_name': newName},
+                              ),
+                            );
+                    
+                          // 2. ADIM: "user_skin_profiles" tablosundaki veriyi güncelle
+                            // (Eski kodunuzda 'profiles' yazıyordu, düzelttik)
+                            await supabase
+                                .from('user_skin_profiles') // <-- DÜZELTME BURADA
+                                .update({'user_name': newName})
+                                .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
+                    
+                            if (mounted) {
+                              setState(() {
+                                userName = newName;
+                              });
+                              Navigator.of(context).pop();
+                              _showSuccess('İsim başarıyla güncellendi');
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              Navigator.of(context).pop();
+                              _showError('İsim güncellenemedi: $e');
+                            }
+                          }
+                        }
+                      },
+                    
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.greenAccent[400],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            "Kaydet",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },),
+                    
+                    
+                              SizedBox(height: 12),
+                              _buildProfileOption(
+                            icon: Icons.spa_outlined, // Güzel bir ikon
+                            title: 'Cilt Profilim',
                             onTap: () {
+                              // Birazdan oluşturacağımız yeni sayfaya yönlendir
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const AnalysisHistoryScreen(),
+                                  builder: (context) => SkinProfileDetailsScreen(),
                                 ),
                               );
                             },
                           ),
                           SizedBox(height: 12),
-
-                          _buildProfileOption(
-                            icon: Icons.lock_outline,
-                            title: 'Privacy & Security',
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PrivacyAndSecurityScreen(),
-                                ),
-                              );
-                            },
+                              _buildProfileOption(
+                                icon: Icons.history,
+                                title: 'Geçmiş Analizler',
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AnalysisHistoryScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 12),
+                    
+                              _buildProfileOption(
+                                icon: Icons.lock_outline,
+                                title: 'Privacy & Security',
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => PrivacyAndSecurityScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                    
+                              SizedBox(height: 12),
+                    
+                              _buildProfileOption(
+                                icon: Icons.help_outline,
+                                title: 'Help & Support',
+                                onTap: () {},
+                              ),
+                    
+                              SizedBox(height: 12),
+                    
+                              _buildProfileOption(
+                                icon: Icons.info_outline,
+                                title: 'About',
+                                onTap: () {},
+                              ),
+                    
+                              SizedBox(height: 30),
+                    
+                              // Logout Button
+                              _buildActionButton(
+                                text: 'Çıkış Yap',
+                                color: Colors.grey[900]!,
+                                onPressed: _signOut,
+                              ),
+                    
+                              SizedBox(height: 12),
+                              SizedBox(height: 100),
+                            ],
                           ),
-
-                          SizedBox(height: 12),
-
-                          _buildProfileOption(
-                            icon: Icons.help_outline,
-                            title: 'Help & Support',
-                            onTap: () {},
-                          ),
-
-                          SizedBox(height: 12),
-
-                          _buildProfileOption(
-                            icon: Icons.info_outline,
-                            title: 'About',
-                            onTap: () {},
-                          ),
-
-                          SizedBox(height: 30),
-
-                          // Logout Button
-                          _buildActionButton(
-                            text: 'Çıkış Yap',
-                            color: Colors.grey[900]!,
-                            onPressed: _signOut,
-                          ),
-
-                          SizedBox(height: 12),
-
-                          SizedBox(height: 20),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: GlassBottomNavBar(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+            ),
+                  ],
                 ),
       ),
     );

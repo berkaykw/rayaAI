@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:raya_ai/screens/ProductCompatibilityTest.dart';
 import 'package:raya_ai/screens/profilepage_screen.dart';
 import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 import '../services/api_service.dart';
@@ -35,6 +36,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   // Yeni: Ürün önerisi tercihleri
   bool _includeProducts = false;
   int _productCount = 3;
+
+  bool _isSabahRutiniExpanded = false;
+  bool _isAksamRutiniExpanded = false;
+  bool _isMakyajOnerileriExpanded = false;
+  bool _isNotlarIpuclariExpanded = false;
+  bool _isKapanisNotuExpanded = false;
+  bool _isUrunOnerileriExpanded = false; 
 
   @override
   void initState() {
@@ -82,10 +90,42 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  if (_selectedIndex == index) return; // aynı sayfaya tıklarsa yeniden yükleme
+
+  setState(() {
+    _selectedIndex = index;
+  });
+
+  Widget targetPage;
+
+  switch (index) {
+    case 0:
+      targetPage = const ProductCompatibilityTest();
+      break;
+    case 1:
+      targetPage = const AnalysisScreen();
+      break;
+    case 2:
+      targetPage = const ProfileScreen();
+      break;
+    default:
+      return;
   }
+
+  Navigator.pushReplacement(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (_, __, ___) => targetPage,
+      transitionDuration: const Duration(milliseconds: 350),
+      transitionsBuilder: (_, animation, __, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+    ),
+  );
+}
 
   Future<void> _pickImageFromCamera() async {
     try {
@@ -1874,43 +1914,87 @@ Widget _buildButtonGalery() {
   );
 }
 
-  Widget _buildAnalysisResults(SkinAnalysisResult result) {
-    return Column(
-      children: [
-        // Giriş mesajı
-        if (result.giris != null)
-          _buildAnalysisCard(
-            title: 'Hoş Geldiniz',
-            content: result.giris!,
-            icon: Icons.waving_hand,
-          ),
-        
-        // Bütüncül Cilt Analizi
-        if (result.butunculCiltAnalizi != null)
-          _buildButunculCiltAnaliziCard(result.butunculCiltAnalizi!),
-        
-        // Kişiselleştirilmiş Bakım Planı
-        if (result.kisisellestirilmisBakimPlani != null)
-          _buildBakimPlaniCard(result.kisisellestirilmisBakimPlani!),
-        
-        // Makyaj ve Renk Önerileri
-        if (result.makyajRenkOnerileri != null)
-          _buildMakyajOnerileriCard(result.makyajRenkOnerileri!),
-        
-        // Önemli Notlar ve İpuçları
-        if (result.onemliNotlarIpuclari != null)
-          _buildNotlarIpuclariCard(result.onemliNotlarIpuclari!),
-        
-        // Kapanış Notu
-        if (result.kapanisNotu != null)
-          _buildAnalysisCard(
-            title: 'Kapanış',
-            content: result.kapanisNotu!,
-            icon: Icons.favorite,
-          ),
-      ],
-    );
-  }
+ Widget _buildAnalysisResults(SkinAnalysisResult result) {
+  return Column(
+    children: [
+      // Giriş mesajı - AÇIK KALACAK
+      if (result.giris != null)
+        _buildAnalysisCard(
+          title: 'Hoş Geldiniz',
+          content: result.giris!,
+          icon: Icons.waving_hand,
+        ),
+      
+      // Bütüncül Cilt Analizi - AÇIK KALACAK
+      if (result.butunculCiltAnalizi != null)
+        _buildButunculCiltAnaliziCard(result.butunculCiltAnalizi!),
+      
+      // Kişiselleştirilmiş Bakım Planı (Sabah ve Akşam Rutinleri içerir)
+      if (result.kisisellestirilmisBakimPlani != null)
+        _buildBakimPlaniCard(result.kisisellestirilmisBakimPlani!),
+      
+      // Ürün Önerileri - GENİŞLETİLEBİLİR
+      if (result.outputUrun != null && result.outputUrun!.isNotEmpty)
+        _buildExpandableRoutineCard(
+          title: 'Ürün Önerileri',
+          icon: Icons.shopping_bag_outlined,
+          gradient: [Colors.blue.withOpacity(0.3), Colors.blueAccent.withOpacity(0.2)],
+          isExpanded: _isUrunOnerileriExpanded,
+          onTap: () {
+            setState(() {
+              _isUrunOnerileriExpanded = !_isUrunOnerileriExpanded;
+            });
+          },
+          content: _formatUrunOnerileri(result.outputUrun!),
+        ),
+      
+      // Makyaj ve Renk Önerileri - GENİŞLETİLEBİLİR
+      if (result.makyajRenkOnerileri != null)
+        _buildExpandableRoutineCard(
+          title: result.makyajRenkOnerileri!.baslik ?? 'Makyaj ve Renk Önerileri',
+          icon: Icons.brush_outlined,
+          gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+          isExpanded: _isMakyajOnerileriExpanded,
+          onTap: () {
+            setState(() {
+              _isMakyajOnerileriExpanded = !_isMakyajOnerileriExpanded;
+            });
+          },
+          content: _buildMakyajOnerileriContent(result.makyajRenkOnerileri!),
+        ),
+      
+      // Önemli Notlar ve İpuçları - GENİŞLETİLEBİLİR
+      if (result.onemliNotlarIpuclari != null)
+        _buildExpandableRoutineCard(
+          title: result.onemliNotlarIpuclari!.baslik ?? 'Önemli Notlar ve İpuçları',
+          icon: Icons.lightbulb_outline,
+          gradient: [Colors.yellow.withOpacity(0.2), Colors.yellowAccent.withOpacity(0.4)],
+          isExpanded: _isNotlarIpuclariExpanded,
+          onTap: () {
+            setState(() {
+              _isNotlarIpuclariExpanded = !_isNotlarIpuclariExpanded;
+            });
+          },
+          content: _buildNotlarIpuclariContent(result.onemliNotlarIpuclari!),
+        ),
+      
+      // Kapanış Notu - GENİŞLETİLEBİLİR
+      if (result.kapanisNotu != null)
+        _buildExpandableRoutineCard(
+          title: 'Kapanış',
+          icon: Icons.favorite,
+          gradient: [Colors.deepPurple.withOpacity(0.2), Colors.deepPurple.withOpacity(0.4)],
+          isExpanded: _isKapanisNotuExpanded,
+          onTap: () {
+            setState(() {
+              _isKapanisNotuExpanded = !_isKapanisNotuExpanded;
+            });
+          },
+          content: result.kapanisNotu!,
+        ),
+    ],
+  );
+}
 
   Widget _buildButunculCiltAnaliziCard(ButunculCiltAnalizi analiz) {
     return _buildAnalysisCard(
@@ -1961,125 +2045,347 @@ Widget _buildButtonGalery() {
     return buffer.toString();
   }
 
-  Widget _buildBakimPlaniCard(KisisellestirilmisBakimPlani plan) {
-    return _buildAnalysisCard(
-      title: plan.baslik ?? 'Kişiselleştirilmiş Bakım Planı',
-      content: _buildBakimPlaniContent(plan),
-      icon: Icons.spa_outlined,
-    );
-  }
+ Widget _buildBakimPlaniCard(KisisellestirilmisBakimPlani plan) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 16),
+    child: Column(
+      children: [
+        // Ana başlık kartı
+        _buildAnalysisCard(
+          title: plan.baslik ?? 'Kişiselleştirilmiş Bakım Planı',
+          content: plan.oncelikliHedef != null 
+              ? '🎯 Öncelikli Hedef:\n${plan.oncelikliHedef}' 
+              : '',
+          icon: Icons.spa_outlined,
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Sabah Rutini Kartı (Genişletilebilir)
+        if (plan.sabahRutini != null)
+          _buildExpandableRoutineCard(
+            title: plan.sabahRutini!.baslik ?? 'Sabah Rutini',
+            icon: Icons.wb_sunny_outlined,
+            gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+            isExpanded: _isSabahRutiniExpanded,
+            onTap: () {
+              setState(() {
+                _isSabahRutiniExpanded = !_isSabahRutiniExpanded;
+              });
+            },
+            content: _buildSabahRutiniContent(plan.sabahRutini!),
+          ),
+        
+        const SizedBox(height: 12),
+        
+        // Akşam Rutini Kartı (Genişletilebilir)
+        if (plan.aksamRutini != null)
+          _buildExpandableRoutineCard(
+            title: plan.aksamRutini!.baslik ?? 'Akşam Rutini',
+            icon: Icons.nightlight_round,
+            gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+            isExpanded: _isAksamRutiniExpanded,
+            onTap: () {
+              setState(() {
+                _isAksamRutiniExpanded = !_isAksamRutiniExpanded;
+              });
+            },
+            content: _buildAksamRutiniContent(plan.aksamRutini!),
+          ),
+      ],
+    ),
+  );
+}
 
-  String _buildBakimPlaniContent(KisisellestirilmisBakimPlani plan) {
-    final buffer = StringBuffer();
-    
-    if (plan.oncelikliHedef != null) {
-      buffer.writeln('🎯 Öncelikli Hedef:');
-      buffer.writeln('${plan.oncelikliHedef}');
-      buffer.writeln('');
-    }
-    
-    if (plan.sabahRutini != null) {
-      buffer.writeln('🌅 ${plan.sabahRutini!.baslik ?? "Sabah Rutini"}:');
-      if (plan.sabahRutini!.adim1Temizleme != null) {
-        buffer.writeln('1️⃣ Temizleme: ${plan.sabahRutini!.adim1Temizleme}');
-      }
-      if (plan.sabahRutini!.adim2Serum != null) {
-        buffer.writeln('2️⃣ Serum: ${plan.sabahRutini!.adim2Serum}');
-      }
-      if (plan.sabahRutini!.adim3Nemlendirme != null) {
-        buffer.writeln('3️⃣ Nemlendirme: ${plan.sabahRutini!.adim3Nemlendirme}');
-      }
-      if (plan.sabahRutini!.adim4Koruma != null) {
-        buffer.writeln('4️⃣ Koruma: ${plan.sabahRutini!.adim4Koruma}');
-      }
-      buffer.writeln('');
-    }
-    
-    if (plan.aksamRutini != null) {
-      buffer.writeln('🌙 ${plan.aksamRutini!.baslik ?? "Akşam Rutini"}:');
-      if (plan.aksamRutini!.adim1CiftAsamaliTemizlemeYag != null) {
-        buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Yağ): ${plan.aksamRutini!.adim1CiftAsamaliTemizlemeYag}');
-      }
-      if (plan.aksamRutini!.adim1CiftAsamaliTemizlemeSu != null) {
-        buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Su): ${plan.aksamRutini!.adim1CiftAsamaliTemizlemeSu}');
-      }
-      if (plan.aksamRutini!.adim2Tonik != null) {
-        buffer.writeln('2️⃣ Tonik: ${plan.aksamRutini!.adim2Tonik}');
-      }
-      if (plan.aksamRutini!.adim3TedaviSerumu != null) {
-        buffer.writeln('3️⃣ Tedavi Serumu: ${plan.aksamRutini!.adim3TedaviSerumu}');
-      }
-      if (plan.aksamRutini!.adim4Nemlendirme != null) {
-        buffer.writeln('4️⃣ Nemlendirme: ${plan.aksamRutini!.adim4Nemlendirme}');
-      }
-      if (plan.aksamRutini!.ekAdimGozKremi != null) {
-        buffer.writeln('✨ Ek Adım - Göz Kremi: ${plan.aksamRutini!.ekAdimGozKremi}');
-      }
-    }
-    
-    return buffer.toString();
-  }
+Widget _buildExpandableRoutineCard({
+  required String title,
+  required IconData icon,
+  required List<Color> gradient,
+  required bool isExpanded,
+  required VoidCallback onTap,
+  required String content,
+}) {
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Stack(
+      children: [
+        // Glow effect
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: gradient[0].withOpacity(0.3),
+                  blurRadius: 20,
+                  spreadRadius: 0,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Ana kart
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withOpacity(0.12),
+                Colors.white.withOpacity(0.05),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: gradient[0].withOpacity(0.4),
+              width: 1.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Column(
+              children: [
+                // Tıklanabilir başlık bölümü
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                      bottom: isExpanded ? Radius.zero : Radius.circular(24),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: gradient,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // Icon container
+                          Container(
+                            padding: EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: gradient[0].withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              icon,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 14),
+                          
+                          // Başlık
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    offset: Offset(0, 2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          
+                          // Açılır ok ikonu
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0,
+                            duration: Duration(milliseconds: 300),
+                            child: Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Genişletilebilir içerik
+                AnimatedSize(
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: Container(
+                    height: isExpanded ? null : 0,
+                    child: AnimatedOpacity(
+                      duration: Duration(milliseconds: 250),
+                      opacity: isExpanded ? 1.0 : 0.0,
+                      child: isExpanded
+                          ? Container(
+                              padding: EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.2),
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.white.withOpacity(0.1),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                content,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 15,
+                                  height: 1.6,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            )
+                          : SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
-  Widget _buildMakyajOnerileriCard(MakyajRenkOnerileri oneriler) {
-    return _buildAnalysisCard(
-      title: oneriler.baslik ?? 'Makyaj ve Renk Önerileri',
-      content: _buildMakyajOnerileriContent(oneriler),
-      icon: Icons.brush_outlined,
-    );
+String _buildSabahRutiniContent(dynamic sabahRutini) {
+  final buffer = StringBuffer();
+  
+  if (sabahRutini.adim1Temizleme != null) {
+    buffer.writeln('1️⃣ Temizleme\n${sabahRutini.adim1Temizleme}\n');
   }
-
-  String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
-    final buffer = StringBuffer();
-    
-    if (oneriler.altTonPaleti != null) {
-      buffer.writeln('🎨 Alt Ton Paleti:');
-      buffer.writeln('${oneriler.altTonPaleti}');
-      buffer.writeln('');
-    }
-    
-    if (oneriler.onerilerErkekIcin != null) {
-      buffer.writeln('👨 Erkekler İçin Öneriler:');
-      if (oneriler.onerilerErkekIcin!.tenUrunu != null) {
-        buffer.writeln('• Ten Ürünü: ${oneriler.onerilerErkekIcin!.tenUrunu}');
-      }
-      if (oneriler.onerilerErkekIcin!.kapatici != null) {
-        buffer.writeln('• Kapatıcı: ${oneriler.onerilerErkekIcin!.kapatici}');
-      }
-    }
-    
-    return buffer.toString();
+  if (sabahRutini.adim2Serum != null) {
+    buffer.writeln('2️⃣ Serum\n${sabahRutini.adim2Serum}\n');
   }
+  if (sabahRutini.adim3Nemlendirme != null) {
+    buffer.writeln('3️⃣ Nemlendirme\n${sabahRutini.adim3Nemlendirme}\n');
+  }
+  if (sabahRutini.adim4Koruma != null) {
+    buffer.writeln('4️⃣ Koruma\n${sabahRutini.adim4Koruma}');
+  }
+  
+  return buffer.toString().trim();
+}
 
-  Widget _buildNotlarIpuclariCard(OnemliNotlarIpuclari notlar) {
-    return _buildAnalysisCard(
-      title: notlar.baslik ?? 'Önemli Notlar ve İpuçları',
-      content: _buildNotlarIpuclariContent(notlar),
-      icon: Icons.lightbulb_outline,
-    );
+// Akşam rutini içeriği:
+String _buildAksamRutiniContent(dynamic aksamRutini) {
+  final buffer = StringBuffer();
+  
+  if (aksamRutini.adim1CiftAsamaliTemizlemeYag != null) {
+    buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Yağ)\n${aksamRutini.adim1CiftAsamaliTemizlemeYag}\n');
+  }
+  if (aksamRutini.adim1CiftAsamaliTemizlemeSu != null) {
+    buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Su)\n${aksamRutini.adim1CiftAsamaliTemizlemeSu}\n');
+  }
+  if (aksamRutini.adim2Tonik != null) {
+    buffer.writeln('2️⃣ Tonik\n${aksamRutini.adim2Tonik}\n');
+  }
+  if (aksamRutini.adim3TedaviSerumu != null) {
+    buffer.writeln('3️⃣ Tedavi Serumu\n${aksamRutini.adim3TedaviSerumu}\n');
+  }
+  if (aksamRutini.adim4Nemlendirme != null) {
+    buffer.writeln('4️⃣ Nemlendirme\n${aksamRutini.adim4Nemlendirme}\n');
+  }
+  if (aksamRutini.ekAdimGozKremi != null) {
+    buffer.writeln('✨ Ek Adım - Göz Kremi\n${aksamRutini.ekAdimGozKremi}');
+  }
+  
+  return buffer.toString().trim();
+}
+
+// Akşam rutini içeriği
+
+String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
+  final buffer = StringBuffer();
+  
+  if (oneriler.altTonPaleti != null) {
+    buffer.writeln('🎨 Alt Ton Paleti:');
+    buffer.writeln('${oneriler.altTonPaleti}');
+    buffer.writeln('');
+  }
+  
+  if (oneriler.onerilerErkekIcin != null) {
+    buffer.writeln('👨 Erkekler İçin Öneriler:');
+    if (oneriler.onerilerErkekIcin!.tenUrunu != null) {
+      buffer.writeln('• Ten Ürünü: ${oneriler.onerilerErkekIcin!.tenUrunu}');
+    }
+    if (oneriler.onerilerErkekIcin!.kapatici != null) {
+      buffer.writeln('• Kapatıcı: ${oneriler.onerilerErkekIcin!.kapatici}');
+    }
+  }
+  
+  return buffer.toString().trim();
+}
+
+  String _formatUrunOnerileri(String urunOnerileri) {
+    // Markdown formatını daha okunabilir hale getir
+    String formatted = urunOnerileri;
+    
+    // ### başlıkları için
+    formatted = formatted.replaceAll(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), '\n📦 \$1\n');
+    
+    // ** kalın yazıları
+    formatted = formatted.replaceAll(RegExp(r'\*\*([^\*]+)\*\*'), '\$1');
+    
+    // * liste işaretlerini
+    formatted = formatted.replaceAll(RegExp(r'^\s*\*\s+', multiLine: true), '• ');
+    
+    // Fazla boşlukları temizle
+    formatted = formatted.replaceAll(RegExp(r'\n{3,}'), '\n\n');
+    
+    return formatted.trim();
   }
 
   String _buildNotlarIpuclariContent(OnemliNotlarIpuclari notlar) {
-    final buffer = StringBuffer();
-    
-    if (notlar.alerjilerNotu != null) {
-      buffer.writeln('⚠️ Alerjiler:');
-      buffer.writeln('${notlar.alerjilerNotu}');
-      buffer.writeln('');
-    }
-    
-    if (notlar.icerikUyarisi != null) {
-      buffer.writeln('💡 İçerik Uyarısı:');
-      buffer.writeln('${notlar.icerikUyarisi}');
-      buffer.writeln('');
-    }
-    
-    if (notlar.yasamTarziIpucu != null) {
-      buffer.writeln('🌿 Yaşam Tarzı İpucu:');
-      buffer.writeln('${notlar.yasamTarziIpucu}');
-    }
-    
-    return buffer.toString();
+  final buffer = StringBuffer();
+  
+  if (notlar.alerjilerNotu != null) {
+    buffer.writeln('⚠️ Alerjiler:');
+    buffer.writeln('${notlar.alerjilerNotu}');
+    buffer.writeln('');
   }
+  
+  if (notlar.icerikUyarisi != null) {
+    buffer.writeln('💡 İçerik Uyarısı:');
+    buffer.writeln('${notlar.icerikUyarisi}');
+    buffer.writeln('');
+  }
+  
+  if (notlar.yasamTarziIpucu != null) {
+    buffer.writeln('🌿 Yaşam Tarzı İpucu:');
+    buffer.writeln('${notlar.yasamTarziIpucu}');
+  }
+  
+  return buffer.toString().trim();
+}
 
   Widget _buildAnalysisCard({
     required String title,
@@ -2260,7 +2566,6 @@ Widget _buildButtonGalery() {
       ),
     );
   }
-
 
   Widget _buildCenterText() {
     return Column(
@@ -2559,4 +2864,5 @@ Widget _buildSavedAnalyze() {
     ),
   );
 }
+
 }

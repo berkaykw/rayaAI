@@ -1,6 +1,7 @@
 // Yeni JSON formatına göre analiz modeli
 
 class SkinAnalysisResult {
+  final String? outputUrun;
   final String? giris;
   final ButunculCiltAnalizi? butunculCiltAnalizi;
   final KisisellestirilmisBakimPlani? kisisellestirilmisBakimPlani;
@@ -9,6 +10,7 @@ class SkinAnalysisResult {
   final String? kapanisNotu;
 
   SkinAnalysisResult({
+    this.outputUrun,
     this.giris,
     this.butunculCiltAnalizi,
     this.kisisellestirilmisBakimPlani,
@@ -19,6 +21,7 @@ class SkinAnalysisResult {
 
   factory SkinAnalysisResult.fromJson(Map<String, dynamic> json) {
     return SkinAnalysisResult(
+      outputUrun: json['output_urun'] as String?,
       giris: json['Giris'] as String?,
       butunculCiltAnalizi: json['Butuncul_Cilt_Analizi'] != null
           ? ButunculCiltAnalizi.fromJson(json['Butuncul_Cilt_Analizi'] as Map<String, dynamic>)
@@ -38,6 +41,7 @@ class SkinAnalysisResult {
 
   Map<String, dynamic> toJson() {
     return {
+      'output_urun': outputUrun,
       'Giris': giris,
       'Butuncul_Cilt_Analizi': butunculCiltAnalizi?.toJson(),
       'Kisisellestirilmis_Bakim_Plani': kisisellestirilmisBakimPlani?.toJson(),

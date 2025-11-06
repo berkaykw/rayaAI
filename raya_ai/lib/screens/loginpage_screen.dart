@@ -540,7 +540,7 @@ void initState() {
                   ],
                 ),
               ),
-              SizedBox(height: 100),
+              SizedBox(height: 150),
             ],
           ),
         ),

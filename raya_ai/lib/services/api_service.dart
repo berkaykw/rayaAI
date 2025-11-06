@@ -64,17 +64,27 @@ class ApiService {
       if (response.statusCode == 200) {
         final List<dynamic> decodedBody = jsonDecode(response.body);
         
-        // Yeni format: [{"output": {"output": {...}}}]
-        if (decodedBody.isNotEmpty && decodedBody[0]['output'] != null) {
-          final Map<String, dynamic> outputData = decodedBody[0]['output'];
+        // Yeni format: [{"output_urun": "...", "output_analiz": {...}}]
+        if (decodedBody.isNotEmpty) {
+          final Map<String, dynamic> responseData = decodedBody[0] as Map<String, dynamic>;
           
-          // İç içe output yapısı var mı kontrol et
-          if (outputData['output'] != null) {
-            final Map<String, dynamic> innerOutput = outputData['output'] as Map<String, dynamic>;
-            return SkinAnalysisResult.fromJson(innerOutput);
+          // output_analiz içindeki veriyi al ve output_urun'u de ekle
+          if (responseData['output_analiz'] != null) {
+            final Map<String, dynamic> analizData = responseData['output_analiz'] as Map<String, dynamic>;
+            // output_urun'u analizData'ya ekle
+            analizData['output_urun'] = responseData['output_urun'] as String?;
+            return SkinAnalysisResult.fromJson(analizData);
+          } else if (responseData['output'] != null) {
+            // Eski format desteği (geriye dönük uyumluluk)
+            final Map<String, dynamic> outputData = responseData['output'] as Map<String, dynamic>;
+            if (outputData['output'] != null) {
+              final Map<String, dynamic> innerOutput = outputData['output'] as Map<String, dynamic>;
+              return SkinAnalysisResult.fromJson(innerOutput);
+            } else {
+              return SkinAnalysisResult.fromJson(outputData);
+            }
           } else {
-            // Direkt output içinde ise
-            return SkinAnalysisResult.fromJson(outputData);
+            throw Exception('API yanıt formatı beklenmedik şekilde.');
           }
         } else {
           throw Exception('API yanıt formatı beklenmedik şekilde.');
