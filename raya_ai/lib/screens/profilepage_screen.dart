@@ -617,7 +617,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                               _buildProfileOption(
                                 icon: Icons.lock_outline,
-                                title: 'Privacy & Security',
+                                title: 'Gizlilik & Güvenlik',
                                 onTap: () {
                                   Navigator.push(
                                     context,
@@ -632,17 +632,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                               _buildProfileOption(
                                 icon: Icons.help_outline,
-                                title: 'Help & Support',
+                                title: 'Yardım & Destek',
                                 onTap: () {},
                               ),
                     
-                              SizedBox(height: 12),
-                    
-                              _buildProfileOption(
-                                icon: Icons.info_outline,
-                                title: 'About',
-                                onTap: () {},
-                              ),
                     
                               SizedBox(height: 30),
                     
