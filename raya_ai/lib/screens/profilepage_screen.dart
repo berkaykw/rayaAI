@@ -9,6 +9,9 @@ import 'package:raya_ai/widgets-tools/skin_profile_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'dart:ui';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -23,6 +26,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? userName;
   String? userEmail;
   bool isLoading = true;
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   int _selectedIndex = 2;
 
@@ -74,9 +79,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
+        // Profil fotoğrafını yükle
+        final prefs = await SharedPreferences.getInstance();
+        final imagePath = prefs.getString('profile_image_path_${user.id}');
+        
         setState(() {
           userEmail = user.email;
           userName = user.userMetadata?['user_name'] ?? 'User';
+          if (imagePath != null && File(imagePath).existsSync()) {
+            _profileImage = File(imagePath);
+          }
           isLoading = false;
         });
       }
@@ -138,6 +150,248 @@ class _ProfileScreenState extends State<ProfileScreen> {
         margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
         behavior: SnackBarBehavior.floating,
       ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        final user = supabase.auth.currentUser;
+        if (user != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('profile_image_path_${user.id}', image.path);
+          
+          setState(() {
+            _profileImage = File(image.path);
+          });
+          _showSuccess('Profil fotoğrafı güncellendi');
+        }
+      }
+    } catch (e) {
+      _showError('Fotoğraf seçilemedi: $e');
+    }
+  }
+
+  void _showImagePickerDialog() {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                padding: EdgeInsets.all(28),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.7),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Profil Fotoğrafı Seç',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 28),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Kamera
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _pickImage(ImageSource.camera);
+                            },
+                            borderRadius: BorderRadius.circular(18),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                                  margin: EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: Colors.pink.withOpacity(0.5),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white.withOpacity(0.15),
+                                        ),
+                                        child: Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        'Kamera',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Galeri
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _pickImage(ImageSource.gallery);
+                            },
+                            borderRadius: BorderRadius.circular(18),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(18),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                                  margin: EdgeInsets.only(left: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: Colors.pink.withOpacity(0.5),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white.withOpacity(0.15),
+                                        ),
+                                        child: Icon(
+                                          Icons.photo_library_rounded,
+                                          color: Colors.white,
+                                          size: 32,
+                                        ),
+                                      ),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        'Galeri',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+                    if (_profileImage != null)
+                      Container(
+                        margin: EdgeInsets.only(bottom: 12),
+                        child: TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _profileImage = null;
+                            });
+                            final user = supabase.auth.currentUser;
+                            if (user != null) {
+                              SharedPreferences.getInstance().then((prefs) {
+                                prefs.remove('profile_image_path_${user.id}');
+                              });
+                            }
+                            Navigator.of(context).pop();
+                            _showSuccess('Profil fotoğrafı kaldırıldı');
+                          },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Fotoğrafı Kaldır',
+                            style: TextStyle(
+                              color: Colors.redAccent[200],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                      ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'İptal',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -432,30 +686,111 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         children: [
           // Profile Avatar
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Colors.pink, Colors.pinkAccent],
-              ),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 3,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                userName != null && userName!.isNotEmpty
-                    ? userName![0].toUpperCase()
-                    : 'U',
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+          GestureDetector(
+            onTap: _showImagePickerDialog,
+            child: Stack(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: _profileImage == null
+                        ? LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.pink,
+                              Colors.pinkAccent,
+                              Colors.pink,
+                            ],
+                          )
+                        : null,
+                    color: _profileImage != null ? Colors.transparent : null,
+                    border: Border.all(
+                      color: _profileImage != null
+                          ? Colors.white.withOpacity(0.4)
+                          : Colors.white.withOpacity(0.3),
+                      width: 3.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.pink.withOpacity(0.5),
+                        blurRadius: 15,
+                        spreadRadius: 2,
+                        offset: Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 10,
+                        spreadRadius: 0,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: _profileImage != null
+                      ? ClipOval(
+                          child: Image.file(
+                            _profileImage!,
+                            fit: BoxFit.cover,
+                            width: 100,
+                            height: 100,
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            userName != null && userName!.isNotEmpty
+                                ? userName![0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
-              ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Color(0xFFFF8E9B),
+                          Colors.pink,
+                        ],
+                      ),
+                      border: Border.all(
+                        color: Color(0xFF2A2A2A),
+                        width: 3.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.pink.withOpacity(0.4),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 

@@ -607,19 +607,26 @@ Future<void> _analyzePickedImage() async {
                                   width: 1,
                                 ),
                               ),
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => ProfileScreen(),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.person_outline_rounded),
-                                iconSize: 25,
-                                color: Colors.white,
-                              ),
+                             child: IconButton(
+  onPressed: () {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => ProfileScreen(),
+        transitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
+  },
+  icon: const Icon(Icons.person_outline_rounded),
+  iconSize: 25,
+  color: Colors.white,
+),
                             ),
                           ],
                         ),

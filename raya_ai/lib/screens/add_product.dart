@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:raya_ai/screens/analysis_screen.dart';
 
 class ProductAddScreen extends StatefulWidget {
   const ProductAddScreen({Key? key}) : super(key: key);
@@ -321,7 +322,14 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                         color: Colors.white70,
                         size: 22,
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AnalysisScreen(),
+                                    ),
+                                  );
+                      },
                     ),
                     SizedBox(width: 8),
                     Text(

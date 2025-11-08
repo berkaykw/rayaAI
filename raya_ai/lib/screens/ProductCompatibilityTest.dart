@@ -338,12 +338,294 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
     );
   }
 
+  // Örnek ürünler listesi (içerik bilgileri ile)
+  final List<Map<String, dynamic>> _sampleProducts = [
+    {
+      'name': 'CeraVe Nemlendirici Krem',
+      'brand': 'CeraVe',
+      'category': 'Nemlendirici',
+      'size': '50ml',
+      'ingredients': ['Ceramides', 'Hyaluronic Acid', 'Glycerin'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Kuru Cilt', 'Hassas Cilt', 'Bariyer Onarımı'],
+    },
+    {
+      'name': 'La Roche-Posay Toleriane Ultra',
+      'brand': 'La Roche-Posay',
+      'category': 'Nemlendirici',
+      'size': '40ml',
+      'ingredients': ['Niacinamide', 'Glycerin', 'Squalane'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Hassas Cilt', 'Kızarıklık', 'Tahriş'],
+    },
+    {
+      'name': 'The Ordinary Niacinamide 10% + Zinc 1%',
+      'brand': 'The Ordinary',
+      'category': 'Serum',
+      'size': '30ml',
+      'ingredients': ['Niacinamide', 'Zinc PCA'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Yağlı Cilt', 'Akne', 'Gözenek'],
+    },
+    {
+      'name': 'Paula\'s Choice 2% BHA Liquid Exfoliant',
+      'brand': 'Paula\'s Choice',
+      'category': 'Tonik',
+      'size': '118ml',
+      'ingredients': ['Salicylic Acid', 'Methylpropanediol'],
+      'problematicIngredients': ['Salicylic Acid'],
+      'beneficialFor': ['Yağlı Cilt', 'Gözenek', 'Siyah Nokta'],
+      'warnings': ['Hassas ciltlerde tahriş edebilir', 'Güneş hassasiyeti yaratabilir'],
+    },
+    {
+      'name': 'Neutrogena Ultra Gentle Daily Cleanser',
+      'brand': 'Neutrogena',
+      'category': 'Temizleyici',
+      'size': '200ml',
+      'ingredients': ['Sodium Laureth Sulfate', 'Glycerin'],
+      'problematicIngredients': ['Sodium Laureth Sulfate'],
+      'beneficialFor': ['Normal Cilt'],
+      'warnings': ['Hassas ciltlerde kuruluk yaratabilir'],
+    },
+    {
+      'name': 'Vichy Aqualia Thermal Serum',
+      'brand': 'Vichy',
+      'category': 'Serum',
+      'size': '30ml',
+      'ingredients': ['Hyaluronic Acid', 'Mineralizing Water'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Kuru Cilt', 'Dehidrasyon', 'Nem'],
+    },
+    {
+      'name': 'Avene Thermal Spring Water',
+      'brand': 'Avene',
+      'category': 'Tonik',
+      'size': '300ml',
+      'ingredients': ['Thermal Spring Water'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Hassas Cilt', 'Tahriş', 'Kızarıklık'],
+    },
+    {
+      'name': 'Bioderma Sensibio H2O Micellar Water',
+      'brand': 'Bioderma',
+      'category': 'Temizleyici',
+      'size': '250ml',
+      'ingredients': ['Micelles', 'Cucumber Extract'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Hassas Cilt', 'Temizleme'],
+    },
+    {
+      'name': 'Kiehl\'s Ultra Facial Cream',
+      'brand': 'Kiehl\'s',
+      'category': 'Nemlendirici',
+      'size': '50ml',
+      'ingredients': ['Glycerin', 'Squalane', 'Glacial Glycoprotein'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Kuru Cilt', 'Nem'],
+    },
+    {
+      'name': 'Clinique Dramatically Different Moisturizing Lotion+',
+      'brand': 'Clinique',
+      'category': 'Nemlendirici',
+      'size': '125ml',
+      'ingredients': ['Glycerin', 'Urea', 'Hyaluronic Acid'],
+      'problematicIngredients': [],
+      'beneficialFor': ['Kuru Cilt', 'Nem'],
+    },
+  ];
+
   void _selectProduct() {
-    // TODO: Ürün seçme sayfası
-    setState(() {
-      _selectedProduct = "Örnek Nemlendirici Krem (50ml)";
-      _result = null;
-    });
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.grey[900]!, Colors.black],
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Ürün Seç',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(color: Colors.white.withOpacity(0.1)),
+              // Product List
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: _sampleProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _sampleProducts[index];
+                    final isSelected = _selectedProduct == 
+                        '${product['name']} (${product['size']})';
+                    
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.pink.withOpacity(0.15)
+                            : Colors.white.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: isSelected
+                              ? Colors.pink.withOpacity(0.6)
+                              : Colors.white.withOpacity(0.1),
+                          width: isSelected ? 2 : 1,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _selectedProduct = '${product['name']} (${product['size']})';
+                              _result = null;
+                            });
+                            Navigator.pop(context);
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                // Check icon
+                                Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isSelected
+                                        ? Colors.pink
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.pink
+                                          : Colors.white.withOpacity(0.3),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: isSelected
+                                      ? Icon(
+                                          Icons.check,
+                                          color: Colors.white,
+                                          size: 16,
+                                        )
+                                      : null,
+                                ),
+                                SizedBox(width: 16),
+                                // Product info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product['name']!,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? Colors.pink
+                                              : Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.pink.withOpacity(0.2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              product['category']!,
+                                              style: TextStyle(
+                                                color: Colors.pink,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            product['brand']!,
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.6),
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          Spacer(),
+                                          Text(
+                                            product['size']!,
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.5),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _runCompatibilityTest() async {
