@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raya_ai/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -89,16 +90,25 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // Arka plan gradient'ı
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
-        ),
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -110,15 +120,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white70, size: 22),
+                          size: 22),
+                      color: onSurface.withOpacity(0.7),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         "Şifre Değiştir",
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -194,9 +204,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           child: ElevatedButton(
                             onPressed: _isLoading ? null : _changePassword,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.pink,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.pink.withOpacity(0.5),
+                              backgroundColor: primary,
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              disabledBackgroundColor:
+                                  primary.withOpacity(0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(27.5),
                               ),
@@ -215,7 +226,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     'Şifreyi Güncelle',
                                     style: TextStyle(
                                         fontSize: 18,
-                                        fontWeight: FontWeight.bold),
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white),
                                   ),
                           ),
                         ),
@@ -239,31 +251,43 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     required VoidCallback onToggleObscure,
     required String? Function(String?) validator,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color fillColor =
+        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04);
+    final Color labelColor =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            Colors.grey;
+    final Color iconColor =
+        theme.iconTheme.color?.withOpacity(0.7) ?? Colors.grey;
+
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
+      style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 16),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white70),
+        labelStyle: TextStyle(color: labelColor),
         filled: true,
-        fillColor: Colors.black54,
+        fillColor: fillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white24),
+          borderSide: BorderSide(
+            color: theme.dividerColor.withOpacity(0.4),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.pinkAccent),
+          borderSide: BorderSide(color: theme.colorScheme.primary),
         ),
         suffixIcon: IconButton(
           icon: Icon(
             obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-            color: Colors.white54,
+            color: iconColor,
           ),
           onPressed: onToggleObscure,
         ),

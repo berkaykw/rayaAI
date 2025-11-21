@@ -1,7 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:raya_ai/screens/ProductCompatibilityTest.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
+import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 
 class ProductAddScreen extends StatefulWidget {
   const ProductAddScreen({Key? key}) : super(key: key);
@@ -20,6 +22,39 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
   String? _selectedCategory;
   File? _productImage;
   bool _isLoading = false;
+  int _selectedIndex = 2;
+
+  bool get _isDarkTheme => Theme.of(context).brightness == Brightness.dark;
+
+  Color get _primaryTextColor =>
+      _isDarkTheme ? Colors.white : Colors.black87;
+
+  Color get _secondaryTextColor =>
+      _isDarkTheme ? Colors.white70 : Colors.black54;
+
+  Color get _iconColor =>
+      _isDarkTheme ? Colors.white70 : Colors.black54;
+
+  Color get _hintTextColor =>
+      _isDarkTheme ? Colors.white54 : Colors.black45;
+
+  Color get _inputFillColor =>
+      _isDarkTheme ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04);
+
+  Color get _inputBorderColor =>
+      _isDarkTheme ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.12);
+
+  LinearGradient get _backgroundGradient => _isDarkTheme
+      ? LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.grey[900]!, Colors.black],
+        )
+      : const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFFDFBFF), Color(0xFFE6E6FA)],
+        );
 
   final List<String> _categories = [
     'Temizleyici',
@@ -41,6 +76,44 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
     _ingredientsController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    if (_selectedIndex == index) return;
+
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    Widget targetPage;
+
+    switch (index) {
+      case 0:
+        targetPage = const ProductCompatibilityTest();
+        break;
+      case 1:
+        targetPage = const AnalysisScreen();
+        break;
+      case 2:
+        targetPage = const ProductAddScreen();
+        break;
+      default:
+        return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => targetPage,
+        transitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -69,7 +142,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Color(0xFF2A2A2A),
+          color: _isDarkTheme ? const Color(0xFF2A2A2A) : Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: EdgeInsets.all(20),
@@ -80,7 +153,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: _isDarkTheme ? Colors.white24 : Colors.black26,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -88,7 +161,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
             Text(
               'Ürün Fotoğrafı Ekle',
               style: TextStyle(
-                color: Colors.white,
+                color: _primaryTextColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -123,15 +196,19 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
+    final Color containerColor =
+        _isDarkTheme ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        _isDarkTheme ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.08);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: containerColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -149,7 +226,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
             Text(
               title,
               style: TextStyle(
-                color: Colors.white,
+                color: _primaryTextColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -166,7 +243,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: Color(0xFF2A2A2A),
+          color: _isDarkTheme ? const Color(0xFF2A2A2A) : Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -180,7 +257,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.white24,
+                      color: _isDarkTheme ? Colors.white24 : Colors.black26,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -188,7 +265,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                   Text(
                     'Kategori Seç',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: _primaryTextColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -196,7 +273,10 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                 ],
               ),
             ),
-            Divider(color: Colors.white24, height: 1),
+            Divider(
+              color: _isDarkTheme ? Colors.white24 : Colors.black12,
+              height: 1,
+            ),
             Flexible(
               child: ListView.builder(
                 shrinkWrap: true,
@@ -207,12 +287,12 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                   return ListTile(
                     leading: Icon(
                       isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
-                      color: isSelected ? Colors.pink : Colors.white54,
+                      color: isSelected ? Colors.pink : _secondaryTextColor,
                     ),
                     title: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.pink : Colors.white,
+                        color: isSelected ? Colors.pink : _primaryTextColor,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -302,145 +382,163 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
       backgroundColor: Colors.black,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
+          gradient: _backgroundGradient,
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white70,
-                        size: 22,
-                      ),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => AnalysisScreen(),
-                                    ),
-                                  );
-                      },
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Yeni Ürün Ekle',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Form
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: EdgeInsets.all(20),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
                       children: [
-                        // Ürün Fotoğrafı
-                        _buildImageSection(),
-                        SizedBox(height: 24),
-
-                        // Ürün Adı
-                        _buildInputField(
-                          controller: _productNameController,
-                          label: 'Ürün Adı',
-                          hint: 'Örn: CeraVe Nemlendirici Krem',
-                          icon: Icons.shopping_bag_outlined,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Ürün adı gerekli';
-                            }
-                            return null;
+                        IconButton(
+                          icon: Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: _iconColor,
+                            size: 22,
+                          ),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AnalysisScreen(),
+                              ),
+                            );
                           },
                         ),
-                        SizedBox(height: 16),
-
-                        // Marka
-                        _buildInputField(
-                          controller: _brandController,
-                          label: 'Marka',
-                          hint: 'Örn: CeraVe',
-                          icon: Icons.business_outlined,
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Marka adı gerekli';
-                            }
-                            return null;
-                          },
+                        SizedBox(width: 8),
+                        Text(
+                          'Yeni Ürün Ekle',
+                          style: TextStyle(
+                            color: _primaryTextColor,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        SizedBox(height: 16),
-
-                        // Kategori
-                        _buildCategorySelector(),
-                        SizedBox(height: 16),
-
-                        // İçerik Listesi
-                        _buildInputField(
-                          controller: _ingredientsController,
-                          label: 'İçerik Listesi (Opsiyonel)',
-                          hint: 'Ürünün içeriğindeki maddeleri yazın',
-                          icon: Icons.list_alt,
-                          maxLines: 5,
-                          validator: null,
-                        ),
-                        SizedBox(height: 16),
-
-                        // Notlar
-                        _buildInputField(
-                          controller: _notesController,
-                          label: 'Notlar (Opsiyonel)',
-                          hint: 'Ürün hakkında notlarınız...',
-                          icon: Icons.note_outlined,
-                          maxLines: 3,
-                          validator: null,
-                        ),
-                        SizedBox(height: 32),
-
-                        // Kaydet Butonu
-                        _buildSaveButton(),
-                        SizedBox(height: 20),
                       ],
                     ),
                   ),
-                ),
+
+                  // Form
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(20, 20, 20, 120),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Ürün Fotoğrafı
+                            _buildImageSection(),
+                            SizedBox(height: 24),
+
+                            // Ürün Adı
+                            _buildInputField(
+                              controller: _productNameController,
+                              label: 'Ürün Adı',
+                              hint: 'Örn: CeraVe Nemlendirici Krem',
+                              icon: Icons.shopping_bag_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Ürün adı gerekli';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+
+                            // Marka
+                            _buildInputField(
+                              controller: _brandController,
+                              label: 'Marka',
+                              hint: 'Örn: CeraVe',
+                              icon: Icons.business_outlined,
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Marka adı gerekli';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+
+                            // Kategori
+                            _buildCategorySelector(),
+                            SizedBox(height: 16),
+
+                            // İçerik Listesi
+                            _buildInputField(
+                              controller: _ingredientsController,
+                              label: 'İçerik Listesi (Opsiyonel)',
+                              hint: 'Ürünün içeriğindeki maddeleri yazın',
+                              icon: Icons.list_alt,
+                              maxLines: 5,
+                              validator: null,
+                            ),
+                            SizedBox(height: 16),
+
+                            // Notlar
+                            _buildInputField(
+                              controller: _notesController,
+                              label: 'Notlar (Opsiyonel)',
+                              hint: 'Ürün hakkında notlarınız...',
+                              icon: Icons.note_outlined,
+                              maxLines: 3,
+                              validator: null,
+                            ),
+                            SizedBox(height: 32),
+
+                            // Kaydet Butonu
+                            _buildSaveButton(),
+                            SizedBox(height: 20),
+                            SizedBox(height: 80),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: GlassBottomNavBar(
+                selectedIndex: _selectedIndex,
+                onItemTapped: _onItemTapped,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildImageSection() {
+    final gradientColors = _isDarkTheme
+        ? [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
+          ]
+        : [
+            Colors.pink.withOpacity(0.08),
+            Colors.pinkAccent.withOpacity(0.05),
+          ];
+    final borderColor =
+        _isDarkTheme ? Colors.pink.withOpacity(0.3) : Colors.pinkAccent.withOpacity(0.4);
     return Container(
       height: 200,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
-          colors: [
-            Colors.white.withOpacity(0.1),
-            Colors.white.withOpacity(0.05),
-          ],
+          colors: gradientColors,
         ),
         border: Border.all(
-          color: Colors.pink.withOpacity(0.3),
+          color: borderColor,
           width: 2,
         ),
       ),
@@ -469,7 +567,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                   Text(
                     'Ürün Fotoğrafı Ekle',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: _primaryTextColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -478,7 +576,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                   Text(
                     'Dokunarak fotoğraf ekleyin',
                     style: TextStyle(
-                      color: Colors.white54,
+                      color: _secondaryTextColor,
                       fontSize: 14,
                     ),
                   ),
@@ -574,7 +672,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
             Text(
               label,
               style: TextStyle(
-                color: Colors.white,
+                color: _primaryTextColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -586,19 +684,19 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
           controller: controller,
           validator: validator,
           maxLines: maxLines,
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: _primaryTextColor),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: TextStyle(color: Colors.white38),
+            hintStyle: TextStyle(color: _hintTextColor),
             filled: true,
-            fillColor: Colors.white.withOpacity(0.08),
+            fillColor: _inputFillColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              borderSide: BorderSide(color: _inputBorderColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+              borderSide: BorderSide(color: _inputBorderColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -630,7 +728,7 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
             Text(
               'Kategori',
               style: TextStyle(
-                color: Colors.white,
+                color: _primaryTextColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -644,12 +742,12 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.08),
+              color: _inputFillColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _selectedCategory != null
                     ? Colors.pink
-                    : Colors.white.withOpacity(0.2),
+                    : _inputBorderColor,
                 width: _selectedCategory != null ? 2 : 1,
               ),
             ),
@@ -660,14 +758,14 @@ class _ProductAddScreenState extends State<ProductAddScreen> {
                   _selectedCategory ?? 'Kategori seçin...',
                   style: TextStyle(
                     color: _selectedCategory != null
-                        ? Colors.white
-                        : Colors.white38,
+                        ? _primaryTextColor
+                        : _hintTextColor,
                     fontSize: 16,
                   ),
                 ),
                 Icon(
                   Icons.arrow_drop_down,
-                  color: Colors.white54,
+                  color: _secondaryTextColor,
                 ),
               ],
             ),

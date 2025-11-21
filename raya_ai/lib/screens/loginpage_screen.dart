@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/sorular.dart';
+import 'package:raya_ai/theme/app_theme.dart';
+import 'package:raya_ai/theme/theme_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:ui';
@@ -268,71 +270,87 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final ThemeController themeController =
+        ThemeControllerProvider.of(context);
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color mutedText =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.grey[900]!, Colors.black],
-              ),
-            ),
+            decoration: BoxDecoration(gradient: backgroundGradient),
             child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Başlık
                   Center(
                     child: Column(
                       children: [
-                        SizedBox(height: 50),
+                        const SizedBox(height: 50),
                         Text(
                           isLogin
                               ? 'Hesabınıza Giriş Yapın'
                               : 'Yeni Hesap Oluşturun',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
+                          style: theme.textTheme.headlineSmall?.copyWith(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             height: 1.3,
                           ),
                         ),
-                        SizedBox(height: 10),
+                        const SizedBox(height: 10),
                         Text(
                           isLogin
                               ? 'Kişisel Bakım Asistanın \n Seni Bekliyor'
                               : 'Kişiselleştirilmiş Bakım Dünyasına\nAdım At',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white54,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: mutedText,
                             fontSize: 15,
                             height: 1.3,
                           ),
                         ),
-                        SizedBox(height: 50),
+                        const SizedBox(height: 50),
                       ],
                     ),
                   ),
 
-                  // Login / Sign up Toggle
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Container(
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.20),
+                        color: cardColor.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: theme.dividerColor.withOpacity(0.2),
+                        ),
                       ),
                       child: Padding(
-                        padding: EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
                         child: Stack(
                           children: [
                             AnimatedAlign(
-                              duration: Duration(milliseconds: 300),
+                              duration: const Duration(milliseconds: 300),
                               curve: Curves.easeInOut,
                               alignment:
                                   isLogin
@@ -343,7 +361,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                 child: Container(
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: Color(0xFF3A3A3A),
+                                    color: isDark ? theme.colorScheme.primary.withOpacity(0.6) : theme.colorScheme.primary.withOpacity(0.7),
                                     borderRadius: BorderRadius.circular(24),
                                   ),
                                 ),
@@ -363,9 +381,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                       child: Center(
                                         child: Text(
                                           'Giriş Yap',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
+                                          style: theme.textTheme.bodyLarge?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -385,9 +401,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                       child: Center(
                                         child: Text(
                                           'Kayıt Ol',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
+                                          style: theme.textTheme.bodyLarge?.copyWith(
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -403,27 +417,31 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                     ),
                   ),
 
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                  // Form Alanları
                   if (!isLogin) ...[
                     _buildTextField(
+                      context: context,
                       controller: _nameController,
                       hint: 'Ad',
                       icon: Icons.person_outline,
+                      isPassword: false,
                     ),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                   ],
 
                   _buildTextField(
+                    context: context,
                     controller: _emailController,
                     hint: 'Email',
                     icon: Icons.email_outlined,
+                    isPassword: false,
                   ),
 
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   _buildTextField(
+                    context: context,
                     controller: _passwordController,
                     hint: 'Şifre',
                     icon: Icons.lock_outline,
@@ -437,8 +455,9 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                   ),
 
                   if (!isLogin) ...[
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     _buildTextField(
+                      context: context,
                       controller: _confirmPasswordController,
                       hint: 'Şifreyi Onayla',
                       icon: Icons.lock_outline,
@@ -446,15 +465,15 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                       obscureText: _obscureConfirmPassword,
                       onTogglePassword: () {
                         setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                          _obscureConfirmPassword =
+                              !_obscureConfirmPassword;
                         });
                       },
                     ),
                   ],
 
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                  // Remember me / Forgot password
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -471,7 +490,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                               height: 20,
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: mutedText.withOpacity(0.6),
                                   width: 2,
                                 ),
                                 borderRadius: BorderRadius.circular(4),
@@ -481,16 +500,16 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                       ? Icon(
                                         Icons.check,
                                         size: 14,
-                                        color: Colors.pink,
+                                        color: theme.colorScheme.primary,
                                       )
                                       : null,
                             ),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Text(
                             'Beni Hatırla',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: mutedText,
                               fontSize: 14,
                             ),
                           ),
@@ -501,13 +520,13 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                           onPressed: isLoading ? null : _resetPassword,
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
-                            minimumSize: Size(0, 0),
+                            minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: Text(
                             'Şifremi Unuttum',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: mutedText,
                               fontSize: 14,
                             ),
                           ),
@@ -515,9 +534,8 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                     ],
                   ),
 
-                  SizedBox(height: 30),
+                  const SizedBox(height: 30),
 
-                  // Login/Sign up Button
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -532,24 +550,25 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.pink,
-                        foregroundColor: Colors.white,
+                        backgroundColor: isDark ? theme.colorScheme.primary.withOpacity(0.6) : theme.colorScheme.primary.withOpacity(0.9),
+                        foregroundColor: theme.colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(27.5),
                         ),
                         elevation: 0,
-                        disabledBackgroundColor: Colors.pink.withOpacity(0.5),
+                        disabledBackgroundColor:
+                            theme.colorScheme.primary.withOpacity(0.5),
                       ),
                       child: Text(
                         isLogin ? 'Giriş Yap' : 'Kayıt Ol',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white,
+                            fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
 
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                  // ✅ Social Login Buttons (Sadece login modunda)
                   if (isLogin)
                     Column(
                       children: [
@@ -557,41 +576,43 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                           children: [
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withOpacity(0.2),
+                                color: mutedText.withOpacity(0.3),
                                 thickness: 1,
                               ),
                             ),
                             Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
                                 'veya',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.5),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: mutedText,
                                   fontSize: 14,
                                 ),
                               ),
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withOpacity(0.2),
+                                color: mutedText.withOpacity(0.3),
                                 thickness: 1,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         Row(
                           children: [
                             Expanded(
                               child: _buildSocialButton(
+                                context: context,
                                 icon: Icons.g_mobiledata,
                                 text: 'Google',
                                 onTap: isLoading ? null : signInWithGoogle,
                               ),
                             ),
-                            SizedBox(width: 12),
+                            const SizedBox(width: 12),
                             Expanded(
                               child: _buildSocialButton(
+                                context: context,
                                 icon: Icons.apple,
                                 text: 'Apple',
                                 onTap: isLoading ? null : signInWithApple,
@@ -602,17 +623,18 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                       ],
                     ),
 
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                  // Footer Text
                   Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isLogin ? 'Hesabın yok mu? ' : 'Zaten bir hesabın var mı? ',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                          isLogin
+                              ? 'Hesabın yok mu? '
+                              : 'Zaten bir hesabın var mı? ',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: mutedText,
                             fontSize: 14,
                           ),
                         ),
@@ -625,7 +647,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                           child: Text(
                             isLogin ? 'Kayıt Ol' : 'Giriş Yap',
                             style: TextStyle(
-                              color: Colors.pink,
+                              color: theme.colorScheme.primary,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -634,19 +656,44 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 150),
+                  const SizedBox(height: 150),
                 ],
               ),
             ),
           ),
-          // ✅ Loading Overlay
+          Positioned(
+            top: 40,
+            right: 24,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(
+                  isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+                  color: theme.colorScheme.primary,
+                ),
+                onPressed: () {
+                  themeController.setThemeMode(
+                    isDark ? ThemeMode.light : ThemeMode.dark,
+                  );
+                },
+              ),
+            ),
+          ),
           if (isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Colors.pink,
-                ),
+              child: const Center(
+                child: CircularProgressIndicator(),
               ),
             ),
         ],
@@ -655,6 +702,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String hint,
     required IconData icon,
@@ -662,26 +710,36 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     bool obscureText = false,
     VoidCallback? onTogglePassword,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color fillColor =
+        isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+    final Color iconColor =
+        theme.iconTheme.color?.withOpacity(0.5) ?? Colors.grey;
+
     return Container(
       height: 55,
       decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
+        color: fillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: borderColor, width: 1),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword && obscureText,
-        style: TextStyle(color: Colors.white, fontSize: 15),
+        style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 15),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.4),
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.45),
             fontSize: 15,
           ),
           prefixIcon: Icon(
             icon,
-            color: Colors.white.withOpacity(0.4),
+            color: iconColor,
             size: 20,
           ),
           suffixIcon:
@@ -691,7 +749,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                       obscureText
                           ? Icons.visibility_off_outlined
                           : Icons.visibility_outlined,
-                      color: Colors.white.withOpacity(0.4),
+                      color: iconColor,
                       size: 20,
                     ),
                     onPressed: onTogglePassword,
@@ -705,10 +763,21 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   }
 
   Widget _buildSocialButton({
+    required BuildContext context,
     required IconData icon,
     required String text,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color containerColor =
+        isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.25)
+        : Colors.black.withOpacity(0.2);
+    final Color iconColor =
+        theme.iconTheme.color ?? theme.colorScheme.primary;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
@@ -716,10 +785,10 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
         child: Container(
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: containerColor,
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
-              color: Colors.white.withOpacity(0.35),
+              color: borderColor,
               width: 2,
             ),
           ),
@@ -733,12 +802,11 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, color: Colors.white, size: 24),
-                  SizedBox(width: 8),
+                  Icon(icon, color: iconColor, size: 24),
+                  const SizedBox(width: 8),
                   Text(
                     text,
-                    style: TextStyle(
-                      color: Colors.white,
+                    style: theme.textTheme.bodyLarge?.copyWith(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                     ),

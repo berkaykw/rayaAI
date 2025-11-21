@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
+import 'package:raya_ai/theme/app_theme.dart';
 import 'package:raya_ai/widgets-tools/change_password_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -68,33 +69,40 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
 }
 
   Future<void> _deleteAccount() async {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color dialogColor =
+        isDark ? const Color(0xFF2A2A2A) : theme.colorScheme.surface;
+    final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     final confirm = await showDialog<bool>(
       context: context,
       builder:
           (context) => AlertDialog(
-            backgroundColor: Color(0xFF2A2A2A),
+            backgroundColor: dialogColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
             title: Text(
-              'Delete Account',
-              style: TextStyle(
-                color: Colors.white,
+              'Hesabı Sil',
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
             content: Text(
-              'Are you sure you want to delete your account? This action cannot be undone.',
-              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+              'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: textColor.withOpacity(0.8),
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: Text('Cancel', style: TextStyle(color: Colors.white70)),
+                child: Text('İptal', style: TextStyle(color: textColor)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text('Delete', style: TextStyle(color: Colors.red)),
+                child: Text('Sil', style: TextStyle(color: theme.colorScheme.error)),
               ),
             ],
           ),
@@ -113,16 +121,24 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // Arka plan gradient'ı
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
-        ),
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -133,15 +149,15 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white70, size: 22),
+                          size: 22),
+                      color: onSurface.withOpacity(0.7),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         "Gizlilik ve Güvenlik",
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
+                        style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -197,8 +213,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                         child: ElevatedButton(
                                 onPressed: _deleteAccount,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Color.fromARGB(255, 242, 53, 53).withOpacity(0.65),
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.red[600],
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(27.5),
                                   ),
@@ -206,7 +221,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                                 ),
                                 child: Text(
                                   'Hesabı Sil',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                                 ),
                               ),
                       ),
@@ -224,12 +239,13 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
 
   // Profil sayfanızdaki stilin aynısını kullanabilirsiniz
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(left: 8.0, bottom: 10, top: 10),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.6),
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
           fontSize: 13,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
@@ -244,11 +260,30 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+    final Color iconColor =
+        theme.iconTheme.color?.withOpacity(0.85) ?? theme.colorScheme.primary;
+    final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -259,13 +294,13 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
+                Icon(icon, color: iconColor, size: 24),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: textColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -274,7 +309,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                 trailing ??
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.white.withOpacity(0.4),
+                      color: textColor.withOpacity(0.4),
                       size: 16,
                     ),
               ],

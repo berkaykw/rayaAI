@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/sorular.dart';
+import 'package:raya_ai/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SkinProfileDetailsScreen extends StatefulWidget {
@@ -104,21 +105,30 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        // ProfileScreen ile aynı arkaplan gradient'ı
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: backgroundGradient,
         ),
         child: SafeArea(
           child: Column(
             children: [
               // Özel Geri ve Düzenle Butonları (AppBar yerine)
-              _buildCustomAppBar(),
+              _buildCustomAppBar(theme),
               // Ana içerik
               Expanded(
                 child: FutureBuilder<Map<String, dynamic>?>(
@@ -139,12 +149,12 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
 
                     final profileData = snapshot.data;
                     if (profileData == null) {
-                      // Hata ekranı tasarımı da koyu temaya uyarlandı
-                      return _buildEmptyState();
+                      // Hata ekranı tasarımı da temaya uyarlandı
+                      return _buildEmptyState(theme);
                     }
 
                     // Verileri liste yerine kartlar halinde göster
-                    return _buildProfileDetailsCards(profileData);
+                    return _buildProfileDetailsCards(profileData, theme);
                   },
                 ),
               ),
@@ -156,7 +166,8 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// AppBar yerine özel üst kısım
-  Widget _buildCustomAppBar() {
+  Widget _buildCustomAppBar(ThemeData theme) {
+    final Color onSurface = theme.colorScheme.onSurface;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
@@ -164,23 +175,25 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
         children: [
           // Geri Butonu
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white70, size: 22),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 22,
+            ),
+            color: onSurface.withOpacity(0.7),
             onPressed: () => Navigator.of(context).pop(),
           ),
           // Başlık
-          const Text(
+          Text(
             "Cilt Profilim",
-            style: TextStyle(
-              color: Colors.white,
+            style: theme.textTheme.titleMedium?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
           // Düzenle Butonu
           IconButton(
-            icon: const Icon(Icons.edit_outlined,
-                color: Colors.white70, size: 24),
+            icon: const Icon(Icons.edit_outlined, size: 24),
+            color: onSurface.withOpacity(0.7),
             onPressed: _navigateToEdit,
           ),
         ],
@@ -189,26 +202,36 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// Veri bulunamadığında gösterilecek ekran
-  Widget _buildEmptyState() {
-    return const Center(
+  Widget _buildEmptyState(ThemeData theme) {
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color secondary =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.warning_amber_rounded,
-                color: Colors.yellowAccent, size: 60),
-            SizedBox(height: 16),
+                color: theme.colorScheme.tertiary, size: 60),
+            const SizedBox(height: 16),
             Text(
               "Cilt profili veriniz bulunamadı.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 18),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: onSurface,
+                fontSize: 18,
+              ),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               "Lütfen profil anketini tamamladığınızdan emin olun.",
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 14),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: secondary,
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -217,7 +240,8 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// Verileri gruplanmış kartlar olarak gösteren Widget
-  Widget _buildProfileDetailsCards(Map<String, dynamic> data) {
+  Widget _buildProfileDetailsCards(
+      Map<String, dynamic> data, ThemeData theme) {
     // List<dynamic> olanları List<String>'e çevir ve birleştir
     String formatList(List? list) {
       if (list == null || list.isEmpty) return "Yok";
@@ -240,6 +264,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
               MapEntry("Yaş Aralığı", data['age_range'] as String?),
               MapEntry("Cinsiyet", data['gender'] as String?),
             ],
+            theme,
           ),
           _buildInfoCard(
             "Cilt Detayları",
@@ -248,6 +273,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
               MapEntry("Alerjiler", allergies),
               MapEntry("Rutin Adımları", routineSteps),
             ],
+            theme,
           ),
           _buildInfoCard(
             "Yaşam Tarzı",
@@ -258,6 +284,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
               MapEntry("Uyku Düzeni", data['sleep_pattern'] as String?),
               MapEntry("Stres Seviyesi", data['stress_level'] as String?),
             ],
+            theme,
           ),
         ],
       ),
@@ -265,13 +292,29 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// ProfileScreen'deki gibi bir bilgi kartı Widget'ı
-  Widget _buildInfoCard(String title, List<MapEntry<String, String?>> items) {
+  Widget _buildInfoCard(String title, List<MapEntry<String, String?>> items,
+      ThemeData theme) {
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : Colors.black.withOpacity(0.05);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,14 +323,19 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Text(
               title,
-              style: const TextStyle(
-                color: Colors.pinkAccent, // Vurgu rengi
+              style: TextStyle(
+                color: theme.colorScheme.primary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const Divider(color: Colors.white24, height: 1, indent: 20, endIndent: 20),
+          Divider(
+            color: theme.dividerColor.withOpacity(0.2),
+            height: 1,
+            indent: 20,
+            endIndent: 20,
+          ),
           // Bilgi satırlarını oluştur
           ListView.separated(
             physics: const NeverScrollableScrollPhysics(), // İç içe scroll'u engelle
@@ -295,11 +343,15 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              return _buildDetailRow(item.key, item.value);
+              return _buildDetailRow(item.key, item.value, theme);
             },
             separatorBuilder: (context, index) {
               // Satırlar arasına ince bir ayırıcı
-              return const Divider(color: Colors.white24, height: 1, indent: 20);
+              return Divider(
+                color: theme.dividerColor.withOpacity(0.15),
+                height: 1,
+                indent: 20,
+              );
             },
           ),
         ],
@@ -308,7 +360,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// (Kart içine girmesi için Dividersız)
-  Widget _buildDetailRow(String title, String? value) {
+  Widget _buildDetailRow(String title, String? value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 20.0),
       child: Column(
@@ -317,7 +369,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -325,8 +377,8 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
           const SizedBox(height: 6),
           Text(
             value ?? "Belirtilmemiş",
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: theme.textTheme.bodyLarge?.color,
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),

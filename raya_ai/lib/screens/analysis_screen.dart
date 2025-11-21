@@ -74,10 +74,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           .eq('is_active', true)
           .maybeSingle();
 
+      if (!mounted) return;
       setState(() {
         userTier = response?['tier'] ?? 'free';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         userTier = 'free';
       });
@@ -612,7 +614,9 @@ Future<void> _analyzePickedImage() async {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        pageBuilder: (_, __, ___) => ProfileScreen(),
+        pageBuilder: (_, __, ___) => ProfileScreen(
+          initialSelectedIndex: _selectedIndex,
+        ),
         transitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
@@ -1928,7 +1932,7 @@ Widget _buildButtonGalery() {
       // Giriş mesajı - AÇIK KALACAK
       if (result.giris != null)
         _buildAnalysisCard(
-          title: 'Hoş Geldiniz',
+          title: 'Analiziniz Tamamlandı',
           content: result.giris!,
           icon: Icons.waving_hand,
         ),
@@ -1946,7 +1950,7 @@ Widget _buildButtonGalery() {
         _buildExpandableRoutineCard(
           title: 'Ürün Önerileri',
           icon: Icons.shopping_bag_outlined,
-          gradient: [Colors.blue.withOpacity(0.3), Colors.blueAccent.withOpacity(0.2)],
+          gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
           isExpanded: _isUrunOnerileriExpanded,
           onTap: () {
             setState(() {
@@ -1955,7 +1959,7 @@ Widget _buildButtonGalery() {
           },
           content: _formatUrunOnerileri(result.outputUrun!),
         ),
-      
+      SizedBox(height: 12),
       // Makyaj ve Renk Önerileri - GENİŞLETİLEBİLİR
       if (result.makyajRenkOnerileri != null)
         _buildExpandableRoutineCard(
@@ -1970,6 +1974,7 @@ Widget _buildButtonGalery() {
           },
           content: _buildMakyajOnerileriContent(result.makyajRenkOnerileri!),
         ),
+        SizedBox(height: 12),
       
       // Önemli Notlar ve İpuçları - GENİŞLETİLEBİLİR
       if (result.onemliNotlarIpuclari != null)
@@ -1985,6 +1990,7 @@ Widget _buildButtonGalery() {
           },
           content: _buildNotlarIpuclariContent(result.onemliNotlarIpuclari!),
         ),
+        SizedBox(height: 12),
       
       // Kapanış Notu - GENİŞLETİLEBİLİR
       if (result.kapanisNotu != null)
@@ -2055,7 +2061,7 @@ Widget _buildButtonGalery() {
 
  Widget _buildBakimPlaniCard(KisisellestirilmisBakimPlani plan) {
   return Container(
-    margin: const EdgeInsets.only(bottom: 16),
+    margin: const EdgeInsets.only(bottom: 12),
     child: Column(
       children: [
         // Ana başlık kartı
@@ -2607,7 +2613,7 @@ String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
 
 Widget _buildAnalyzeAgainButton() {
   return Container(
-    margin: const EdgeInsets.only(bottom: 12),
+    margin: const EdgeInsets.only(top: 20, bottom: 20),
     child: Stack(
       children: [
         // Glow effect

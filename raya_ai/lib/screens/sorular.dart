@@ -85,8 +85,13 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
     "Makyaj temizleyici",
     "Hiçbiri / bilmiyorum",
   ];
-  final sunscreenFrequencies = ["Her gün", "Sadece yazın", "Nadiren", "Hiç kullanmam"];
-  final smokingOptions = ["Evet", "Hayır","Az Miktarda", "Bıraktım"];
+  final sunscreenFrequencies = [
+    "Her gün",
+    "Sadece yazın",
+    "Nadiren",
+    "Hiç kullanmam"
+  ];
+  final smokingOptions = ["Evet", "Hayır", "Az Miktarda", "Bıraktım"];
   final sleepPatterns = ["Her gün 7+ saat", "Düzensiz", "Genellikle az uyurum"];
   final stressLevels = ["Düşük", "Orta", "Yüksek"];
 
@@ -101,7 +106,6 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
 
   void _loadExistingData(Map<String, dynamic> data) {
     setState(() {
-      // Tip dönüşümlerine dikkat ederek verileri ata
       gender = data['gender'] as String?;
       ageRange = data['age_range'] as String?;
       skinType = data['skin_type'] as String?;
@@ -111,7 +115,6 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
       sleepPattern = data['sleep_pattern'] as String?;
       stressLevel = data['stress_level'] as String?;
 
-      // Veritabanından List<dynamic> olarak gelen verileri List<String>'e çevir
       skinProblems = (data['skin_problems'] as List?)
               ?.map((item) => item.toString())
               .toList() ??
@@ -152,66 +155,56 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-  // Butonu devre dışı bırak ve yükleniyor animasyonu göster
-  setState(() => _isLoading = true); 
+    setState(() => _isLoading = true);
 
-  // 1. Mevcut giriş yapmış kullanıcının ID'sini al
-  // Bu ID, bizim SQL tablomuzdaki 'id' sütununa karşılık gelecek.
-  final userId = supabase.auth.currentUser?.id;
+    final userId = supabase.auth.currentUser?.id;
 
-  if (userId == null) {
-    // Kullanıcı bir şekilde çıkış yapmışsa işlemi durdur
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın."),
-          backgroundColor: Colors.red,
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content:
+                Text("Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın."),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
+
+    try {
+      final skinProfileData = {
+        'id': userId,
+        'gender': gender,
+        'age_range': ageRange,
+        'skin_type': skinType,
+        'skin_problems': skinProblems,
+        'allergies': allergies,
+        'wash_frequency': washFrequency,
+        'routine_steps': routineSteps,
+        'sunscreen_frequency': sunscreenFrequency,
+        'smoking_status': smokingStatus,
+        'sleep_pattern': sleepPattern,
+        'stress_level': stressLevel,
+        'has_completed_onboarding': true,
+      };
+
+      await supabase.from('user_skin_profiles').upsert(skinProfileData);
+
+      await supabase.auth.updateUser(
+        UserAttributes(
+          data: {
+            'has_completed_onboarding': true,
+          },
         ),
       );
-      setState(() => _isLoading = false);
-    }
-    return;
-  }
 
-  try {
-    // 2. Toplanan tüm verileri bir map'e koy 
-    final skinProfileData = {
-      'id': userId, // <-- EN ÖNEMLİSİ: Kullanıcı ID'sini ekle
-      'gender': gender, 
-      'age_range': ageRange, 
-      'skin_type': skinType, 
-      'skin_problems': skinProblems, 
-      'allergies': allergies, 
-      'wash_frequency': washFrequency, 
-      'routine_steps': routineSteps, 
-      'sunscreen_frequency': sunscreenFrequency, 
-      'smoking_status': smokingStatus, 
-      'sleep_pattern': sleepPattern, 
-      'stress_level': stressLevel, 
-      'has_completed_onboarding': true, // <-- Bayrağı da buraya ekliyoruz
-    };
+      if (!mounted) return;
 
-    // 3. Supabase 'user_skin_profiles' tablosuna 'upsert' yap
-    // 'upsert', eğer bu ID'ye sahip bir kayıt varsa günceller, yoksa yeni kayıt ekler.
-    // Bu, kullanıcının bilgilerini daha sonra değiştirmesine de olanak tanır.
-    await supabase.from('user_skin_profiles').upsert(skinProfileData);
-
-    await supabase.auth.updateUser(
-      UserAttributes(
-        data: {
-          'has_completed_onboarding': true,
-        },
-      ),
-    );
-    
-    if (!mounted) return; 
-
-    if (_isEditMode) {
-        // Eğer düzenleme modundaysa, bir önceki sayfaya (Profile)
-        // 'true' sonucuyla dön. (Kaydettiğini bilsin)
-        Navigator.pop(context, true); // <-- 'true' DÖNDÜR
+      if (_isEditMode) {
+        Navigator.pop(context, true);
       } else {
-        // Yeni kullanıcıysa, Ana Ekrana yönlendir
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const AnalysisScreen()),
@@ -219,12 +212,12 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Profil kaydedilirken hata oluştu: $e"), 
-          backgroundColor: Colors.red, 
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Profil kaydedilirken hata oluştu: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -233,60 +226,87 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
     }
   }
 
- Widget _buildSelectableOption<T>({
-  required T value,
-  required T? groupValue,
-  required String label,
-  required void Function(T) onSelect,
-}) {
-  final bool isSelected = value == groupValue;
+  Widget _buildSelectableOption<T>({
+    required T value,
+    required T? groupValue,
+    required String label,
+    required void Function(T) onSelect,
+  }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final bool isSelected = value == groupValue;
 
-  return GestureDetector(
-    onTap: () => onSelect(value),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.pink : Colors.grey[800],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isSelected ? Colors.pinkAccent : Colors.white24),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white70,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+    // Arka plan rengi (Seçili değilse: Koyu modda koyu gri, açık modda açık gri)
+    final Color unselectedBg = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+    // Metin rengi
+    final Color unselectedText = isDark ? Colors.white70 : Colors.black87;
+    // Kenarlık rengi
+    final Color unselectedBorder =
+        isDark ? Colors.white24 : Colors.black12;
+
+    return GestureDetector(
+      onTap: () => onSelect(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.pink : unselectedBg,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? Colors.pinkAccent : unselectedBorder,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : unselectedText,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          AnimatedOpacity(
-            opacity: isSelected ? 1 : 0,
-            duration: const Duration(milliseconds: 300),
-            child: const Icon(Icons.check_circle, color: Colors.white),
-          ),
-        ],
+            AnimatedOpacity(
+              opacity: isSelected ? 1 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: const Icon(Icons.check_circle, color: Colors.white),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildChipGroup(List<String> options, List<String> selectedList) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+
+    final Color unselectedBg = isDark ? Colors.grey[800]! : Colors.grey[200]!;
+    final Color unselectedText = isDark ? Colors.white70 : Colors.black87;
+
     return Wrap(
       spacing: 8,
+      runSpacing: 8, // Chip'ler alt satıra geçince boşluk olsun
       children: options.map((label) {
         final selected = selectedList.contains(label);
         return FilterChip(
           label: Text(label),
           selected: selected,
           selectedColor: Colors.pink,
-          backgroundColor: Colors.grey[800],
-          labelStyle: TextStyle(color: selected ? Colors.white : Colors.white70),
+          backgroundColor: unselectedBg,
+          checkmarkColor: Colors.white,
+          // Kenarlık kaldırılıyor veya temaya uygun hale getiriliyor
+          side: BorderSide(
+            color: selected
+                ? Colors.pink
+                : (isDark ? Colors.white12 : Colors.black12),
+          ),
+          labelStyle: TextStyle(
+            color: selected ? Colors.white : unselectedText,
+          ),
           onSelected: (val) {
             setState(() {
               if (val) {
@@ -301,52 +321,132 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
     );
   }
 
+  Widget _questionWrapper({
+    required String question,
+    required Widget child,
+    VoidCallback? onNext,
+    bool isLoading = false,
+  }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color titleColor = isDark ? Colors.white : Colors.black;
+
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20), // Üst boşluk biraz azaltıldı
+          Text(
+            question,
+            style: TextStyle(
+              color: titleColor,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Expanded(child: SingleChildScrollView(child: child)),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onNext,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.pink,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                disabledBackgroundColor: isDark
+                    ? Colors.grey[800]
+                    : Colors.grey[300], // Buton pasifken renk
+                disabledForegroundColor:
+                    isDark ? Colors.white38 : Colors.black38,
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 3,
+                      ),
+                    )
+                  : Text(
+                      _currentPage == 8 ? "Tamamla" : "İleri",
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
     final totalPages = 9;
 
+    // Alt başlıklar için renk (Yaşam tarzı sayfasındaki sorular)
+    final Color subQuestionColor = isDark ? Colors.white : Colors.black87;
+    final Color dividerColor = theme.dividerColor;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      // Scaffold arka planı temadan gelir
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             // Üst kısım: Geri butonu + progress bar
-            Row(
-              children: [
-                if (_isEditMode || _currentPage > 0)
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                    onPressed: () {
-                      if (_isEditMode && _currentPage == 0) {
-                        // Düzenleme modunda ve ilk sayfadaysa, kaydetmeden çık
-                        Navigator.pop(context, false); // <-- 'false' DÖNDÜR
-                      } else {
-                        // Diğer durumlarda bir önceki soruya git
-                        _previousPage();
-                      }
-                    },
-                  )
-                else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Row(
+                children: [
+                  if (_isEditMode || _currentPage > 0)
+                    IconButton(
+                      icon: Icon(
+                        Icons.arrow_back_ios,
+                        // İkon rengi temaya göre değişir
+                        color: theme.iconTheme.color ??
+                            (isDark ? Colors.white : Colors.black),
+                      ),
+                      onPressed: () {
+                        if (_isEditMode && _currentPage == 0) {
+                          Navigator.pop(context, false);
+                        } else {
+                          _previousPage();
+                        }
+                      },
+                    )
+                  else
+                    const SizedBox(width: 48),
+                  Expanded(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                          begin: 0, end: (_currentPage + 1) / totalPages),
+                      duration: const Duration(milliseconds: 400),
+                      builder: (context, value, child) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: LinearProgressIndicator(
+                            value: value,
+                            // Arka plan rengi temaya uygun
+                            backgroundColor:
+                                isDark ? Colors.grey[800] : Colors.grey[300],
+                            color: Colors.pinkAccent,
+                            minHeight: 8,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   const SizedBox(width: 48),
-                Expanded(
-                  child: TweenAnimationBuilder<double>(
-  tween: Tween<double>(begin: 0, end: (_currentPage + 1) / totalPages),
-  duration: const Duration(milliseconds: 400),
-  builder: (context, value, child) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: LinearProgressIndicator(
-        value: value,
-        backgroundColor: Colors.grey[800],
-        color: Colors.pinkAccent,
-        minHeight: 8,
-      ),
-    );
-  },
-)
-                ),
-                const SizedBox(width: 48),
-              ],
+                ],
+              ),
             ),
             Expanded(
               child: PageView(
@@ -426,7 +526,8 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
                               value: option,
                               groupValue: washFrequency,
                               label: option,
-                              onSelect: (val) => setState(() => washFrequency = val),
+                              onSelect: (val) =>
+                                  setState(() => washFrequency = val),
                             ),
                           )
                           .toList(),
@@ -449,7 +550,8 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
                               value: option,
                               groupValue: sunscreenFrequency,
                               label: option,
-                              onSelect: (val) => setState(() => sunscreenFrequency = val),
+                              onSelect: (val) =>
+                                  setState(() => sunscreenFrequency = val),
                             ),
                           )
                           .toList(),
@@ -462,38 +564,50 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
                     child: Column(
                       children: [
                         const SizedBox(height: 8),
-                        const Text("Sigara kullanıyor musunuz?", style: TextStyle(color: Colors.white, fontSize: 18)),
+                        Text("Sigara kullanıyor musunuz?",
+                            style: TextStyle(
+                                color: subQuestionColor, fontSize: 18)),
+                        const SizedBox(height: 8),
                         Column(
                           children: smokingOptions
                               .map((option) => _buildSelectableOption<String>(
                                     value: option,
                                     groupValue: smokingStatus,
                                     label: option,
-                                    onSelect: (val) => setState(() => smokingStatus = val),
+                                    onSelect: (val) =>
+                                        setState(() => smokingStatus = val),
                                   ))
                               .toList(),
                         ),
-                        const Divider(color: Colors.white24),
-                        const Text("Uyku düzeniniz nasıl?", style: TextStyle(color: Colors.white, fontSize: 18)),
+                        Divider(color: dividerColor, height: 32),
+                        Text("Uyku düzeniniz nasıl?",
+                            style: TextStyle(
+                                color: subQuestionColor, fontSize: 18)),
+                        const SizedBox(height: 8),
                         Column(
                           children: sleepPatterns
                               .map((option) => _buildSelectableOption<String>(
                                     value: option,
                                     groupValue: sleepPattern,
                                     label: option,
-                                    onSelect: (val) => setState(() => sleepPattern = val),
+                                    onSelect: (val) =>
+                                        setState(() => sleepPattern = val),
                                   ))
                               .toList(),
                         ),
-                        const Divider(color: Colors.white24),
-                        const Text("Stres düzeyiniz?", style: TextStyle(color: Colors.white, fontSize: 18)),
+                        Divider(color: dividerColor, height: 32),
+                        Text("Stres düzeyiniz?",
+                            style: TextStyle(
+                                color: subQuestionColor, fontSize: 18)),
+                        const SizedBox(height: 8),
                         Column(
                           children: stressLevels
                               .map((option) => _buildSelectableOption<String>(
                                     value: option,
                                     groupValue: stressLevel,
                                     label: option,
-                                    onSelect: (val) => setState(() => stressLevel = val),
+                                    onSelect: (val) =>
+                                        setState(() => stressLevel = val),
                                   ))
                               .toList(),
                         ),
@@ -502,66 +616,16 @@ class _SkinOnboardingScreenState extends State<SkinOnboardingScreen> {
                     onNext: (smokingStatus != null &&
                             sleepPattern != null &&
                             stressLevel != null &&
-                            !_isLoading) // Yükleniyorsa tekrar basılmasın
-                        ? _completeOnboarding // <-- Yeni fonksiyonumuzu çağır
+                            !_isLoading)
+                        ? _completeOnboarding
                         : null,
-                    isLoading: _isLoading, // <-- Yükleniyor durumunu widget'a ilet
+                    isLoading: _isLoading,
                   ),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _questionWrapper({
-    required String question,
-    required Widget child,
-    VoidCallback? onNext,
-    bool isLoading = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 30),
-          Text(
-            question,
-            style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Expanded(child: SingleChildScrollView(child: child)),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onNext,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.pink,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 3,
-                      ),
-                    )
-                  : Text(
-                      _currentPage == 8 ? "Tamamla" : "İleri",
-                      style: TextStyle(fontWeight: FontWeight.w900),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 30),
-        ],
       ),
     );
   }

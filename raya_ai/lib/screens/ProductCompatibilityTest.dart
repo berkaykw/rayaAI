@@ -3,6 +3,7 @@ import 'dart:io'; // File kullanımı için eklendi
 import 'package:flutter/material.dart';
 import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
+import 'package:raya_ai/theme/app_theme.dart';
 import 'package:raya_ai/widgets-tools/glass_bottom_navbar.dart';
 import 'package:raya_ai/models/analysis_model.dart';
 import 'dart:async';
@@ -168,169 +169,230 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
   }
 
   void _showAnalysisPicker(List<LocalAnalysisEntry> entries) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color secondaryText =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    final LinearGradient sheetGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFF1E7F2),
+            ],
+          );
+    final Color baseCardColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : theme.colorScheme.surface;
+    final Color selectedCardColor = primary.withOpacity(isDark ? 0.15 : 0.12);
+    final Color dividerColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.06);
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
         return Container(
-          padding:
-              const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 8),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
+          decoration: BoxDecoration(
+            gradient: sheetGradient,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                margin: EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: onSurface.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Geçmiş Analizi Seçin',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
+                      'Geçmiş Analizi Seç',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, color: Colors.white54),
+                      icon: Icon(Icons.close, color: secondaryText),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 8),
-              Divider(color: Colors.white24),
-              const SizedBox(height: 8),
+              Divider(color: dividerColor),
               if (entries.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(32.0),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(Icons.history,
-                            size: 48, color: Colors.white.withOpacity(0.4)),
-                        SizedBox(height: 12),
-                        Text(
-                          'Henüz kaydedilmiş analiz yok',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 16,
-                          ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.history,
+                          size: 48, color: secondaryText.withOpacity(0.6)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Henüz kaydedilmiş analiz yok',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: secondaryText,
                         ),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 )
               else
                 Flexible(
                   child: ListView.builder(
                     shrinkWrap: true,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: entries.length,
                     itemBuilder: (context, index) {
                       final analysis = entries[index];
                       final bool isSelected =
                           analysis.timestamp == _selectedAnalysisTimestamp;
-                      
-                      // Resim kontrolü
+
                       final hasLocalImage = analysis.imagePath != null &&
                           analysis.imagePath!.isNotEmpty &&
                           File(analysis.imagePath!).existsSync();
                       final hasNetworkImage = analysis.imageUrl != null &&
                           analysis.imageUrl!.isNotEmpty;
-                      
+
                       return Container(
-                        margin: EdgeInsets.only(bottom: 8),
+                        margin: EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? Colors.pink.withOpacity(0.15)
-                              : Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          color:
+                              isSelected ? selectedCardColor : baseCardColor,
+                          borderRadius: BorderRadius.circular(16),
                           border: Border.all(
                             color: isSelected
-                                ? Colors.pink
-                                : Colors.white.withOpacity(0.1),
+                                ? primary.withOpacity(0.6)
+                                : dividerColor,
                             width: isSelected ? 2 : 1,
                           ),
                         ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          leading: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                isSelected
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: isSelected ? Colors.pink : Colors.white54,
-                              ),
-                              SizedBox(width: 12),
-                              // Analiz resmi
-                              Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.pink.withOpacity(0.5)
-                                        : Colors.white.withOpacity(0.2),
-                                    width: 1.5,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              setState(() {
+                                _selectedAnalysisTimestamp = analysis.timestamp;
+                                _result = null;
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 24,
+                                    height: 24,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isSelected
+                                          ? primary
+                                          : Colors.transparent,
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? primary
+                                            : dividerColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: isSelected
+                                        ? Icon(
+                                            Icons.check,
+                                            color: Colors.white,
+                                            size: 16,
+                                          )
+                                        : null,
                                   ),
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(7),
-                                  child: hasLocalImage
-                                      ? Image.file(
-                                          File(analysis.imagePath!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : hasNetworkImage
-                                          ? Image.network(
-                                              analysis.imageUrl!,
+                                  SizedBox(width: 16),
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: isSelected
+                                            ? primary.withOpacity(0.5)
+                                            : dividerColor,
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(9),
+                                      child: hasLocalImage
+                                          ? Image.file(
+                                              File(analysis.imagePath!),
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) =>
-                                                  _buildPlaceholderImage(),
                                             )
-                                          : _buildPlaceholderImage(),
-                                ),
+                                          : hasNetworkImage
+                                              ? Image.network(
+                                                  analysis.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      _buildPlaceholderImage(),
+                                                )
+                                              : _buildPlaceholderImage(),
+                                    ),
+                                  ),
+                                  SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          analysis.displayText,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? primary
+                                                : onSurface,
+                                            fontSize: 16,
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.w600,
+                                          ),
+                                        ),
+                                        SizedBox(height: 6),
+                                        Text(
+                                          '${analysis.sectionCount} bölüm',
+                                          style: TextStyle(
+                                            color: secondaryText,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          title: Text(
-                            analysis.displayText,
-                            style: TextStyle(
-                              color: isSelected ? Colors.pink : Colors.white,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
                             ),
                           ),
-                          subtitle: Text(
-                            '${analysis.sectionCount} bölüm',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
-                          onTap: () {
-                            setState(() {
-                              _selectedAnalysisTimestamp = analysis.timestamp;
-                              _result = null;
-                            });
-                            Navigator.pop(context);
-                          },
                         ),
                       );
                     },
                   ),
                 ),
+              SizedBox(height: 16),
             ],
           ),
         );
@@ -435,6 +497,31 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
   ];
 
   void _selectProduct() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color secondaryText =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    final LinearGradient sheetGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFF1E7F2),
+            ],
+          );
+    final Color baseCardColor = isDark
+        ? Colors.white.withOpacity(0.05)
+        : theme.colorScheme.surface;
+    final Color selectedCardColor = primary.withOpacity(isDark ? 0.15 : 0.12);
+    final Color dividerColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.06);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -445,12 +532,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             maxHeight: MediaQuery.of(context).size.height * 0.8,
           ),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.grey[900]!, Colors.black],
-            ),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            gradient: sheetGradient,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -461,7 +544,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
+                  color: onSurface.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -473,20 +556,19 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                   children: [
                     Text(
                       'Ürün Seç',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: onSurface,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: Icon(Icons.close, color: Colors.white70),
+                      icon: Icon(Icons.close, color: secondaryText),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
               ),
-              Divider(color: Colors.white.withOpacity(0.1)),
+              Divider(color: dividerColor),
               // Product List
               Flexible(
                 child: ListView.builder(
@@ -501,14 +583,13 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                     return Container(
                       margin: EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.pink.withOpacity(0.15)
-                            : Colors.white.withOpacity(0.05),
+                        color:
+                            isSelected ? selectedCardColor : baseCardColor,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected
-                              ? Colors.pink.withOpacity(0.6)
-                              : Colors.white.withOpacity(0.1),
+                              ? primary.withOpacity(0.6)
+                              : dividerColor,
                           width: isSelected ? 2 : 1,
                         ),
                       ),
@@ -534,12 +615,12 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: isSelected
-                                        ? Colors.pink
+                                        ? primary
                                         : Colors.transparent,
                                     border: Border.all(
                                       color: isSelected
-                                          ? Colors.pink
-                                          : Colors.white.withOpacity(0.3),
+                                          ? primary
+                                          : dividerColor,
                                       width: 2,
                                     ),
                                   ),
@@ -561,8 +642,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                         product['name']!,
                                         style: TextStyle(
                                           color: isSelected
-                                              ? Colors.pink
-                                              : Colors.white,
+                                              ? primary
+                                              : onSurface,
                                           fontSize: 16,
                                           fontWeight: isSelected
                                               ? FontWeight.bold
@@ -578,13 +659,15 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: Colors.pink.withOpacity(0.2),
-                                              borderRadius: BorderRadius.circular(8),
+                                              color:
+                                                  primary.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                             child: Text(
                                               product['category']!,
                                               style: TextStyle(
-                                                color: Colors.pink,
+                                                color: primary,
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -594,7 +677,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                           Text(
                                             product['brand']!,
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(0.6),
+                                              color: secondaryText,
                                               fontSize: 13,
                                             ),
                                           ),
@@ -602,7 +685,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                           Text(
                                             product['size']!,
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(0.5),
+                                              color:
+                                                  secondaryText.withOpacity(0.8),
                                               fontSize: 12,
                                             ),
                                           ),
@@ -656,7 +740,20 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
 
   Widget _buildAnalysisSelector(List<LocalAnalysisEntry> entries) {
     String selectedAnalysisText = "Geçmiş bir analiz seçin...";
-    Color textColor = Colors.white54;
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color subtleText =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.2)
+        : Colors.black.withOpacity(0.08);
+    final Color tileColor = isDark
+        ? Colors.white.withOpacity(0.08)
+        : theme.colorScheme.surface;
+    Color textColor = subtleText;
     IconData iconData = Icons.analytics_outlined;
     Widget? leadingWidget;
 
@@ -665,7 +762,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
         final selectedEntry = entries
             .firstWhere((a) => a.timestamp == _selectedAnalysisTimestamp);
         selectedAnalysisText = selectedEntry.displayText;
-        textColor = Colors.white;
+        textColor = onSurface;
         iconData = Icons.check_circle_outline;
         
         // Seçili analizin resmini göster
@@ -682,7 +779,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.pink.withOpacity(0.5),
+                color: primary.withOpacity(0.5),
                 width: 2,
               ),
             ),
@@ -717,9 +814,9 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: tileColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(color: borderColor),
           ),
           child: Row(
             children: [
@@ -736,7 +833,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.keyboard_arrow_down, color: Colors.white54),
+              Icon(Icons.keyboard_arrow_down, color: subtleText),
             ],
           ),
         ),
@@ -746,17 +843,33 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
 
   // Placeholder resim widget'ı
   Widget _buildPlaceholderImage() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
-      color: Colors.grey[800],
+      color: isDark ? Colors.grey[800] : Colors.grey[300],
       child: Icon(
         Icons.image_outlined,
-        color: Colors.white54,
+        color: isDark ? Colors.white54 : Colors.black45,
         size: 24,
       ),
     );
   }
 
   Widget _buildProductSelector() {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color outlineColor = isDark
+        ? Colors.white.withOpacity(0.3)
+        : Colors.black.withOpacity(0.1);
+    final Color outlinedBg = isDark
+        ? Colors.white.withOpacity(0.1)
+        : theme.colorScheme.surface.withOpacity(0.9);
+    final Color badgeBorder = isDark
+        ? Colors.white.withOpacity(0.5)
+        : Colors.black.withOpacity(0.1);
+
     return _buildStepCard(
       step: "2. Adım",
       title: "Ürün Seç",
@@ -768,9 +881,9 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             label: const Text("Ürün Ara veya Seç"),
             onPressed: _selectProduct,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.white.withOpacity(0.1),
-              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+              foregroundColor: onSurface,
+              backgroundColor: outlinedBg,
+              side: BorderSide(color: outlineColor),
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -780,22 +893,94 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
           if (_selectedProduct != null)
             Padding(
               padding: const EdgeInsets.only(top: 12.0),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_box,
-                      color: Colors.greenAccent, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _selectedProduct!,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? LinearGradient(
+                          colors: [
+                            primary.withOpacity(0.18),
+                            primary.withOpacity(0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : LinearGradient(
+                          colors: [
+                            Colors.white,
+                            primary.withOpacity(0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: primary.withOpacity(0.7),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primary.withOpacity(isDark ? 0.2 : 0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: primary,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 16,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _selectedProduct!,
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.greenAccent[400]!.withOpacity(0.5)
+                            : Colors.green[400]!.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: badgeBorder,
+                          width: 2,
+                        ),
+                      ),
+                      child: Text(
+                        "Seçildi",
+                        style: TextStyle(
+                          color: onSurface,
+                          fontSize: 12,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -804,10 +989,17 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
   }
 
   Widget _buildResultCard() {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+
     if (_isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(32.0),
-        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      return Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(
+          child: CircularProgressIndicator(
+            color: theme.colorScheme.primary,
+          ),
+        ),
       );
     }
 
@@ -845,12 +1037,12 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
     }
 
     return Card(
-      color: Colors.white.withOpacity(0.05),
+      color: isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: color.withOpacity(0.5), width: 1),
+        side: BorderSide(color: color.withOpacity(0.4), width: 1),
       ),
-      elevation: 0,
+      elevation: isDark ? 0 : 2,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -869,8 +1061,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             Text(
               description,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.textTheme.bodyLarge?.color?.withOpacity(0.8),
                 fontSize: 15,
                 height: 1.4,
               ),
@@ -885,12 +1077,21 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
       {required String step,
       required String title,
       required Widget content}) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color titleColor = theme.textTheme.titleMedium?.color ??
+        theme.colorScheme.onSurface;
     return Card(
-      color: Colors.white.withOpacity(0.05),
-      elevation: 0,
+      color: isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface,
+      elevation: isDark ? 0 : 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
-        side: BorderSide(color: Colors.white.withOpacity(0.1)),
+        side: BorderSide(
+          color: isDark
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.05),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -900,7 +1101,7 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             Text(
               step,
               style: TextStyle(
-                color: Colors.pink,
+                color: primary,
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -908,8 +1109,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
             const SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: titleColor,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -924,18 +1125,31 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final Color secondaryText =
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
+            onSurface.withOpacity(0.7);
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
     final bool isTestReady =
         _selectedAnalysisTimestamp != null && _selectedProduct != null;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
+          gradient: backgroundGradient,
         ),
         child: Stack(
           children: [
@@ -944,8 +1158,8 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                 future: _entriesFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: Colors.pink),
+                    return Center(
+                      child: CircularProgressIndicator(color: primary),
                     );
                   }
 
@@ -958,18 +1172,21 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                           children: [
                             Icon(Icons.error_outline,
                                 size: 64, color: Colors.redAccent),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
                               'Analizler yüklenemedi',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: onSurface,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Text(
                               '${snapshot.error}',
-                              style: TextStyle(color: Colors.white54),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: secondaryText,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -988,15 +1205,17 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.history,
-                                size: 64, color: Colors.white.withOpacity(0.3)),
-                            SizedBox(height: 16),
+                                size: 64, color: secondaryText.withOpacity(0.5)),
+                            const SizedBox(height: 16),
                             Text(
                               'Henüz kaydedilmiş bir analiziniz yok.',
-                              style:
-                                  TextStyle(color: Colors.white70, fontSize: 16),
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: secondaryText,
+                                fontSize: 16,
+                              ),
                               textAlign: TextAlign.center,
                             ),
-                            SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             ElevatedButton.icon(
                               onPressed: () {
                                 Navigator.pushReplacement(
@@ -1006,12 +1225,12 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                                   ),
                                 );
                               },
-                              icon: Icon(Icons.add),
-                              label: Text('İlk Analizini Yap'),
+                              icon: const Icon(Icons.add),
+                              label: const Text('İlk Analizini Yap'),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.pink,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
+                                backgroundColor: primary,
+                                foregroundColor: theme.colorScheme.onPrimary,
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -1030,19 +1249,19 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const Text(
+                          Text(
                             'Ürün Uyum Testi',
-                            style: TextStyle(
-                              color: Colors.white,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              color: onSurface,
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Geçmiş analizlerinizi seçerek ürünlerin cildinize uyumunu kontrol edin.',
-                            style: TextStyle(
-                              color: Colors.white70,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: secondaryText,
                               fontSize: 16,
                             ),
                           ),
@@ -1058,12 +1277,14 @@ class _ProductCompatibilityTestState extends State<ProductCompatibilityTest> {
                             onPressed:
                                 isTestReady ? _runCompatibilityTest : null,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.pink,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.grey[700],
-                              disabledForegroundColor: Colors.grey[400],
+                              backgroundColor: primary.withOpacity(0.85),
+                              foregroundColor: theme.colorScheme.onPrimary,
+                              disabledBackgroundColor:
+                                  theme.disabledColor.withOpacity(0.3),
+                              disabledForegroundColor:
+                                  theme.disabledColor.withOpacity(0.8),
                               padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                                  const EdgeInsets.symmetric(vertical: 20),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),

@@ -4,6 +4,8 @@ import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
+import 'package:raya_ai/theme/app_theme.dart';
+import 'package:raya_ai/theme/theme_controller.dart';
 import 'package:raya_ai/widgets-tools/privacy_security_screen.dart';
 import 'package:raya_ai/widgets-tools/skin_profile_details_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,7 +16,12 @@ import 'dart:io';
 import 'dart:ui';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  final int initialSelectedIndex;
+
+  const ProfileScreen({
+    Key? key,
+    this.initialSelectedIndex = -1,
+  }) : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -29,11 +36,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
-  int _selectedIndex = 2;
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialSelectedIndex;
     _loadUserData();
   }
 
@@ -177,6 +185,145 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       _showError('Fotoğraf seçilemedi: $e');
     }
+  }
+
+  void _showRenameDialog() {
+    final nameController = TextEditingController(text: userName);
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color dialogColor =
+        isDark ? const Color(0xFF2A2A2A) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.15)
+        : Colors.black.withOpacity(0.05);
+    final Color inputFill =
+        isDark ? Colors.black54 : Colors.black.withOpacity(0.05);
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: dialogColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "İsmini Değiştir",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                style: TextStyle(
+                  color: theme.textTheme.bodyLarge?.color,
+                  fontSize: 16,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Yeni isim girin",
+                  filled: true,
+                  fillColor: inputFill,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      "İptal",
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final newName = nameController.text.trim();
+                      final user = supabase.auth.currentUser;
+                      if (newName.length > 16) {
+                        _showError("İsim en fazla 16 karakter olabilir.");
+                        return;
+                      }
+                      if (newName.isNotEmpty && user != null) {
+                        try {
+                          await supabase.auth.updateUser(
+                            UserAttributes(
+                              data: {'user_name': newName},
+                            ),
+                          );
+
+                          await supabase
+                              .from('user_skin_profiles')
+                              .update({'user_name': newName})
+                              .eq('id', user.id);
+
+                          if (mounted) {
+                            setState(() {
+                              userName = newName;
+                            });
+                            Navigator.of(context).pop();
+                            _showSuccess('İsim başarıyla güncellendi');
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                            _showError('İsim güncellenemedi: $e');
+                          }
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: theme.colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text(
+                      "Kaydet",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showImagePickerDialog() {
@@ -397,193 +544,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color primary = theme.colorScheme.primary;
+    final Color onSurface = theme.colorScheme.onSurface;
+    final LinearGradient backgroundGradient = isDark
+        ? AppGradients.darkBackground
+        : const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.grey[900]!, Colors.black],
-          ),
+            colors: [
+              Color(0xFFFDFBFF),
+              Color(0xFFEFE8F4),
+            ],
+          );
+    final themeController = ThemeControllerProvider.of(context);
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: backgroundGradient,
         ),
-        child:
-            isLoading
-                ? Center(child: CircularProgressIndicator(color: Colors.pink))
-                : Stack(
-                  children: [
-                    SafeArea(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 20,
-                          ),
-                          child: Column(
-                            children: [
-                              Align(
-                                alignment: Alignment.topLeft,
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white70,
-                                    size: 22,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => const AnalysisScreen(),
-                                      ),
-                                    );
-                                  },
+        child: isLoading
+            ? Center(
+                child: CircularProgressIndicator(color: primary),
+              )
+            : Stack(
+                children: [
+                  SafeArea(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
+                        child: Column(
+                          children: [
+                            Align(
+                              alignment: Alignment.topLeft,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: onSurface.withOpacity(0.7),
+                                  size: 22,
                                 ),
-                              ),
-                              // Profile Header
-                              _buildProfileHeader(),
-                    
-                              SizedBox(height: 40),
-                    
-                              // Profile Options
-                              _buildProfileOption(
-                      icon: Icons.person_outline,
-                      title: "Ad Değiştir",
-                      onTap: () {
-                        TextEditingController _nameController = TextEditingController(text: userName);
-                    
-                        showDialog(
-                          context: context,
-                          builder: (context) => Dialog(
-                            backgroundColor: Color(0xFF2A2A2A),
-                            child: SingleChildScrollView(
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Color(0xFF2A2A2A),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 15,
-                      offset: Offset(0, 5),
-                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                    Text(
-                      "İsmini Değiştir",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white, // Sabit renk
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _nameController,
-                      style: TextStyle(
-                         color: Colors.white, // Yazı rengi
-                         fontSize: 16,
-                        ),
-                      decoration: InputDecoration(
-                        hintText: "Yeni isim girin",
-                        filled: true,
-                        fillColor: Colors.black54, // Sabit renk
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 16,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text(
-                            "İptal",
-                            style: TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        ElevatedButton(
-                      onPressed: () async {
-                        final newName = _nameController.text.trim();
-                        final user = supabase.auth.currentUser; // Mevcut kullanıcıyı al
-                        if (newName.length > 16) {
-                        _showError("İsim en fazla 16 karakter olabilir.");
-                        return;
-                        }
-                        if (newName.isNotEmpty && user != null) {
-                          try {
-                            // 1. ADIM: Authentication meta verisini güncelle
-                            // Bu, gelecekteki trigger'lar veya fonksiyonlar için
-                            // "ana kaynak" olarak kalır.
-                            await supabase.auth.updateUser(
-                              UserAttributes(
-                                data: {'user_name': newName},
-                              ),
-                            );
-                    
-                          // 2. ADIM: "user_skin_profiles" tablosundaki veriyi güncelle
-                            // (Eski kodunuzda 'profiles' yazıyordu, düzelttik)
-                            await supabase
-                                .from('user_skin_profiles') // <-- DÜZELTME BURADA
-                                .update({'user_name': newName})
-                                .eq('id', user.id); // Sadece mevcut kullanıcının satırını güncelle
-                    
-                            if (mounted) {
-                              setState(() {
-                                userName = newName;
-                              });
-                              Navigator.of(context).pop();
-                              _showSuccess('İsim başarıyla güncellendi');
-                            }
-                          } catch (e) {
-                            if (mounted) {
-                              Navigator.of(context).pop();
-                              _showError('İsim güncellenemedi: $e');
-                            }
-                          }
-                        }
-                      },
-                    
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.greenAccent[400],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: Text(
-                            "Kaydet",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                                  ],
-                                ),
+                                onPressed: () {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AnalysisScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                        );
-                      },),
+                            _buildProfileHeader(),
+
+                            const SizedBox(height: 40),
+
+                            _buildProfileOption(
+                              icon: Icons.person_outline,
+                              title: "Ad Değiştir",
+                              onTap: _showRenameDialog,
+                            ),
                     
                     
                               SizedBox(height: 12),
@@ -630,51 +654,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     
                               SizedBox(height: 12),
                     
-                              _buildProfileOption(
-                                icon: Icons.help_outline,
-                                title: 'Yardım & Destek',
-                                onTap: () {},
-                              ),
-                    
-                    
-                              SizedBox(height: 30),
-                    
-                              // Logout Button
-                              _buildActionButton(
-                                text: 'Çıkış Yap',
-                                color: Colors.grey[900]!,
-                                onPressed: _signOut,
-                              ),
-                    
-                              SizedBox(height: 12),
-                              SizedBox(height: 100),
-                            ],
-                          ),
+                            _buildProfileOption(
+                              icon: Icons.help_outline,
+                              title: 'Yardım & Destek',
+                              onTap: () {},
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            _buildThemeSection(
+                              themeController: themeController,
+                              theme: theme,
+                              isDark: isDark,
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            _buildActionButton(
+                              text: 'Çıkış Yap',
+                              color: Colors.red[600]!,
+                              onPressed: _signOut,
+                              textColor: Colors.white,
+                            ),
+
+                            const SizedBox(height: 112),
+                          ],
                         ),
                       ),
                     ),
-                    Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: GlassBottomNavBar(
-                selectedIndex: _selectedIndex,
-                onItemTapped: _onItemTapped,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: GlassBottomNavBar(
+                      selectedIndex: _selectedIndex,
+                      onItemTapped: _onItemTapped,
+                    ),
+                  ),
+                ],
               ),
-            ),
-                  ],
-                ),
       ),
     );
   }
 
   Widget _buildProfileHeader() {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
+        color: cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 18,
+              offset: Offset(0, 8),
+            ),
+        ],
       ),
       child: Column(
         children: [
@@ -789,38 +835,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           SizedBox(height: 16),
 
-          // User Name
           Text(
             userName ?? '******',
-            style: TextStyle(
+            style: theme.textTheme.headlineSmall?.copyWith(
               fontSize: 26,
               fontWeight: FontWeight.w600,
               letterSpacing: -0.3,
               height: 1.2,
-              color: Colors.white,
-              shadows: [
-                Shadow(
-                  offset: const Offset(0, 1),
-                  blurRadius: 2,
-                  color: Colors.black.withOpacity(0.15),
-                ),
-                Shadow(
-                  offset: const Offset(0, 4),
-                  blurRadius: 12,
-                  color: Colors.black.withOpacity(0.25),
-                ),
-              ],
             ),
           ),
 
           SizedBox(height: 6),
 
-          // User Email
           Text(
             userEmail ?? 'email@example.com',
-            style: TextStyle(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
               letterSpacing: 0.2,
             ),
           ),
@@ -835,11 +866,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+    final Color iconColor =
+        theme.iconTheme.color ?? theme.colorScheme.primary;
+    final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFF2A2A2A),
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -850,13 +900,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Row(
               children: [
-                Icon(icon, color: Colors.white.withOpacity(0.8), size: 24),
+                Icon(icon, color: iconColor.withOpacity(0.85), size: 24),
                 SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: textColor,
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -865,7 +915,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing ??
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.white.withOpacity(0.4),
+                      color: textColor.withOpacity(0.4),
                       size: 16,
                     ),
               ],
@@ -880,7 +930,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String text,
     required Color color,
     required VoidCallback onPressed,
+    required Color textColor,
   }) {
+    final theme = Theme.of(context);
     return SizedBox(
       width: double.infinity,
       height: 55,
@@ -888,7 +940,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
-          foregroundColor: Colors.white,
+          foregroundColor: theme.colorScheme.onPrimary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(27.5),
           ),
@@ -896,11 +948,149 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Text(
           text,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
  
+  Widget _buildThemeSection({
+    required ThemeController themeController,
+    required ThemeData theme,
+    required bool isDark,
+  }) {
+    final ThemeMode currentMode = themeController.themeMode;
+    final Color borderColor = isDark
+        ? Colors.white.withOpacity(0.1)
+        : Colors.black.withOpacity(0.05);
+    final Color cardColor =
+        isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
+    final Color textColor = theme.textTheme.titleMedium?.color ??
+        theme.colorScheme.onSurface;
 
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 15,
+              offset: Offset(0, 8),
+            ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tema',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Koyu veya açık temayı tercihine göre seç.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildThemeChoiceChip(
+                  label: 'Koyu',
+                  icon: Icons.nightlight_round,
+                  isSelected: currentMode == ThemeMode.dark,
+                  onTap: () => themeController.setThemeMode(ThemeMode.dark),
+                  theme: theme,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildThemeChoiceChip(
+                  label: 'Açık',
+                  icon: Icons.wb_sunny_outlined,
+                  isSelected: currentMode == ThemeMode.light,
+                  onTap: () => themeController.setThemeMode(ThemeMode.light),
+                  theme: theme,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeChoiceChip({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required ThemeData theme,
+  }) {
+    final Color primary = theme.colorScheme.primary;
+    final bool isDark = theme.brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    primary.withOpacity(0.2),
+                    primary.withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected
+              ? null
+              : (isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : theme.colorScheme.surface),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? primary
+                : (isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.05)),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? primary : theme.iconTheme.color,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? primary
+                    : theme.textTheme.bodyLarge?.color,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
