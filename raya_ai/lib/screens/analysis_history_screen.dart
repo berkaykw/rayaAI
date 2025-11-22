@@ -1540,10 +1540,10 @@ Widget _buildAnalysisCard({
     String formatted = urunOnerileri;
     
     // ### başlıkları için
-    formatted = formatted.replaceAll(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), '\n📦 \$1\n');
+    formatted = formatted.replaceAllMapped(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), (match) => '\n📦 ${match.group(1)}\n');
     
     // ** kalın yazıları
-    formatted = formatted.replaceAll(RegExp(r'\*\*([^\*]+)\*\*'), '\$1');
+    formatted = formatted.replaceAllMapped(RegExp(r'\*\*([^\*]+)\*\*'), (match) => match.group(1) ?? '');
     
     // * liste işaretlerini
     formatted = formatted.replaceAll(RegExp(r'^\s*\*\s+', multiLine: true), '• ');

@@ -33,6 +33,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   String? _statusMessage;
   SkinAnalysisResult? _analysisResult;
   bool _isLoading = false;
+  bool _isSaving = false;
   String? _imageUrlForDisplay;
   File? _selectedImageFile;
 
@@ -255,6 +256,11 @@ Future<void> _analyzePickedImage() async {
   }
 
   Future<void> _saveCurrentAnalysis() async {
+    // Eğer zaten kaydetme işlemi devam ediyorsa, yeni bir işlem başlatma
+    if (_isSaving) {
+      return;
+    }
+
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       setState(() {
@@ -268,6 +274,10 @@ Future<void> _analyzePickedImage() async {
       });
       return;
     }
+
+    setState(() {
+      _isSaving = true;
+    });
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -284,17 +294,28 @@ Future<void> _analyzePickedImage() async {
       existingEncoded.add(jsonEncode(entry));
       await prefs.setStringList(storageKey, existingEncoded);
 
-      _showSuccess('Analiz kaydedildi');
+      if (mounted) {
+        _showSuccess('Analiz kaydedildi');
+      }
     } catch (e) {
-      setState(() {
-        _statusMessage = 'Analiz kaydedilemedi: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _statusMessage = 'Analiz kaydedilemedi: $e';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
   void _resetState() {
     setState(() {
       _isLoading = false;
+      _isSaving = false;
       _statusMessage = null;
       _analysisResult = null;
       _selectedImageFile = null;
@@ -2293,38 +2314,32 @@ Widget _buildExpandableRoutineCard({
   required String content,
   Color? customContentBg,
 }) {
+  // Tema değişkenleri
   final theme = Theme.of(context);
   final Color accent = theme.colorScheme.primary;
   final Color accent2 = theme.colorScheme.secondary;
 
-  // --- RENK PALETİ (Analiz kartı ile aynı) ---
   final Color glassCardBg = Colors.pink.shade400.withOpacity(0.25);
   final Color glassContentBoxBg = Colors.pink.shade50.withOpacity(0.4);
   final Color glassAccent = Colors.pink.shade600.withOpacity(0.6);
   final Color glassBorder = Colors.pink.shade700.withOpacity(0.2);
-
-  // --- GLOW RENGİ ---
+  
   final Color glowColor = _isDarkTheme
       ? accent.withOpacity(0.15)
       : Colors.pink.shade400.withOpacity(0.2);
 
-  // İçerik Arka Planı (Açılan Metin Kutusu):
-  final Color contentBackground = customContentBg ?? 
-      (_isDarkTheme 
-          ? Colors.black.withOpacity(0.2)
-          : glassContentBoxBg);
+  final Color contentBackground = customContentBg ??
+      (_isDarkTheme ? Colors.black.withOpacity(0.2) : glassContentBoxBg);
 
-  // Metin rengi tema durumuna göre
-  final Color contentTextColor = _isDarkTheme
-      ? Colors.white.withOpacity(0.9)
-      : Colors.black87;
+  final Color contentTextColor =
+      _isDarkTheme ? Colors.white.withOpacity(0.9) : Colors.black87;
 
   return AnimatedContainer(
     duration: const Duration(milliseconds: 300),
     margin: const EdgeInsets.only(bottom: 12),
     child: Stack(
       children: [
-        // --- HAFİF GÖLGE EFEKTİ (Analiz kartı ile aynı) ---
+        // --- GLOW EFEKTİ ---
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
@@ -2336,23 +2351,17 @@ Widget _buildExpandableRoutineCard({
                   spreadRadius: -3,
                   offset: const Offset(0, 8),
                 ),
-                BoxShadow(
-                  color: glowColor.withOpacity(_isDarkTheme ? 0.05 : 0.1),
-                  blurRadius: 30,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 0),
-                ),
               ],
             ),
           ),
         ),
 
-        // --- ANA KART GÖVDESİ ---
+        // --- KART GÖVDESİ ---
         ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: Stack(
             children: [
-              // 1. Blur (Sadece Açık Mod) - Analiz kartı ile aynı
+              // 1. Blur
               if (!_isDarkTheme)
                 Positioned.fill(
                   child: BackdropFilter(
@@ -2361,7 +2370,7 @@ Widget _buildExpandableRoutineCard({
                   ),
                 ),
 
-              // 2. Kart Yapısı ve Zemin Rengi - Analiz kartı ile aynı
+              // 2. Dekorasyon ve İçerik
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(24),
@@ -2383,9 +2392,7 @@ Widget _buildExpandableRoutineCard({
                 ),
                 child: Stack(
                   children: [
-                    // --- YANSIMA EFEKTİ (Analiz kartı ile aynı) ---
-
-                    // KOYU MOD İÇİN ESKİ YANSIMA (Sağ üst köşe)
+                    // Yansıma Efektleri
                     if (_isDarkTheme)
                       Positioned(
                         top: 0,
@@ -2395,106 +2402,73 @@ Widget _buildExpandableRoutineCard({
                           height: 150,
                           decoration: BoxDecoration(
                             gradient: RadialGradient(
-                              colors: [
-                                accent.withOpacity(0.15),
-                                Colors.transparent,
-                              ],
+                              colors: [accent.withOpacity(0.15), Colors.transparent],
                               radius: 1.0,
                             ),
                           ),
                         ),
                       ),
-
-                    // AÇIK MOD İÇİN YENİ PÜRÜZSÜZ GEÇİŞ (Tüm kart yüzeyi)
                     if (!_isDarkTheme)
                       Positioned.fill(
                         child: Container(
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
-                              colors: [
-                                Colors.white.withOpacity(0.3),
-                                Colors.transparent,
-                              ],
+                              colors: [Colors.white.withOpacity(0.3), Colors.transparent],
                               stops: const [0.0, 0.5],
                             ),
                           ),
                         ),
                       ),
 
-                    // İçerik
+                    // --- İÇERİK COLUMN ---
+                    // Column'u Stack içinde tutuyoruz ama doğrudan child olarak
                     Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // --- BAŞLIK KISMI ---
+                        // --- BAŞLIK ---
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
                             onTap: onTap,
                             borderRadius: BorderRadius.vertical(
                               top: const Radius.circular(24),
-                              bottom: isExpanded
-                                  ? Radius.zero
-                                  : const Radius.circular(24),
+                              bottom: isExpanded ? Radius.zero : const Radius.circular(24),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Row(
                                 children: [
-                                  // İkon Kutusu - Analiz kartı ile aynı
+                                  // İkon
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
                                       color: _isDarkTheme ? null : glassAccent,
                                       gradient: _isDarkTheme
-                                          ? LinearGradient(
-                                              colors: [accent, accent2],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            )
+                                          ? LinearGradient(colors: [accent, accent2])
                                           : null,
                                       borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: _isDarkTheme
-                                              ? accent.withOpacity(0.2)
-                                              : Colors.pink.shade700.withOpacity(0.25),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
                                     ),
-                                    child: Icon(
-                                      icon,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
+                                    child: Icon(icon, color: Colors.white, size: 24),
                                   ),
                                   const SizedBox(width: 14),
-                                  // Başlık Metni - Analiz kartı ile aynı
+                                  
+                                  // Başlık Metni
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
                                           title,
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
-                                            letterSpacing: 0.5,
-                                            shadows: [
-                                              Shadow(
-                                                color: Colors.black.withOpacity(0.4),
-                                                offset: const Offset(0, 2),
-                                                blurRadius: 4,
-                                              ),
-                                            ],
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        // Alt Çizgi - Analiz kartı ile aynı
                                         Container(
                                           height: 3,
                                           width: 40,
@@ -2509,6 +2483,7 @@ Widget _buildExpandableRoutineCard({
                                       ],
                                     ),
                                   ),
+                                  
                                   // Ok İkonu
                                   AnimatedRotation(
                                     turns: isExpanded ? 0.5 : 0,
@@ -2532,13 +2507,12 @@ Widget _buildExpandableRoutineCard({
                           ),
                         ),
 
-                        // --- AÇILAN İÇERİK KISMI ---
+                        // --- AÇILAN METİN ---
                         AnimatedSize(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                           child: isExpanded
                               ? Container(
-                                  width: double.infinity,
                                   decoration: BoxDecoration(
                                     color: contentBackground,
                                     borderRadius: const BorderRadius.vertical(
@@ -2652,10 +2626,10 @@ String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
     String formatted = urunOnerileri;
     
     // ### başlıkları için
-    formatted = formatted.replaceAll(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), '\n📦 \$1\n');
+    formatted = formatted.replaceAllMapped(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), (match) => '\n📦 ${match.group(1)}\n');
     
     // ** kalın yazıları
-    formatted = formatted.replaceAll(RegExp(r'\*\*([^\*]+)\*\*'), '\$1');
+    formatted = formatted.replaceAllMapped(RegExp(r'\*\*([^\*]+)\*\*'), (match) => match.group(1) ?? '');
     
     // * liste işaretlerini
     formatted = formatted.replaceAll(RegExp(r'^\s*\*\s+', multiLine: true), '• ');
@@ -3098,7 +3072,7 @@ Widget _buildAnalyzeAgainButton() {
 }
 
 Widget _buildSavedAnalyze() {
-  final bool isDisabled = _analysisResult == null;
+  final bool isDisabled = _analysisResult == null || _isSaving;
   
   return Container(
     margin: const EdgeInsets.only(bottom: 12),
@@ -3172,44 +3146,56 @@ Widget _buildSavedAnalyze() {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: isDisabled
-                              ? (_isDarkTheme
-                                  ? [
-                                      Colors.grey[700]!,
-                                      Colors.grey[800]!,
-                                    ]
-                                  : [
-                                      Colors.grey[400]!,
-                                      Colors.grey[300]!,
-                                    ])
+                    if (_isSaving)
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _isDarkTheme ? Colors.white : Colors.deepPurple,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isDisabled
+                                ? (_isDarkTheme
+                                    ? [
+                                        Colors.grey[700]!,
+                                        Colors.grey[800]!,
+                                      ]
+                                    : [
+                                        Colors.grey[400]!,
+                                        Colors.grey[300]!,
+                                      ])
+                                : [
+                                    Colors.deepPurpleAccent,
+                                    Colors.deepPurple,
+                                  ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: isDisabled
+                              ? []
                               : [
-                                  Colors.deepPurpleAccent,
-                                  Colors.deepPurple,
+                                  BoxShadow(
+                                    color: Colors.deepPurple.withOpacity(_isDarkTheme ? 0.5 : 0.3),
+                                    blurRadius: 8,
+                                    offset: Offset(0, 4),
+                                  ),
                                 ],
                         ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: isDisabled
-                            ? []
-                            : [
-                                BoxShadow(
-                                  color: Colors.deepPurple.withOpacity(_isDarkTheme ? 0.5 : 0.3),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
+                        child: Icon(
+                          Icons.bookmark_rounded,
+                          color: isDisabled
+                              ? (_isDarkTheme ? Colors.white38 : Colors.black38)
+                              : Colors.white,
+                          size: 24,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.bookmark_rounded,
-                        color: isDisabled
-                            ? (_isDarkTheme ? Colors.white38 : Colors.black38)
-                            : Colors.white,
-                        size: 24,
-                      ),
-                    ),
                     SizedBox(width: 16),
                     Text(
                       'Analizi Kaydet',
@@ -3244,17 +3230,19 @@ Widget _buildSavedAnalyze() {
             top: 0,
             left: 0,
             right: 0,
-            child: Container(
-              height: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+            child: IgnorePointer( 
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.15),
+                      Colors.transparent,
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
               ),
             ),
