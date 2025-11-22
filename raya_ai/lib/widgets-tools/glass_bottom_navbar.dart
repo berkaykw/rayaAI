@@ -17,7 +17,7 @@ class GlassBottomNavBar extends StatelessWidget {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color containerColor = isDark
         ? Colors.white.withOpacity(0.06)
-        : Colors.black.withOpacity(0.1);
+        : Colors.grey.withOpacity(0.18);
     final Color borderColor = isDark
         ? Colors.white.withOpacity(0.25)
         : Colors.black.withOpacity(0.18);
@@ -63,7 +63,7 @@ class GlassBottomNavBar extends StatelessWidget {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final bool isSelected = selectedIndex == index;
-    final Color selectedColor = theme.colorScheme.primary;
+    final Color selectedColor = isDark ? Colors.white : Colors.pink.withOpacity(0.9);
     final Color unselectedColor = isDark
         ? Colors.white.withOpacity(0.7)
         : theme.colorScheme.onSurface.withOpacity(0.5);
