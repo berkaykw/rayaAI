@@ -19,7 +19,6 @@ class AnalysisHistoryScreen extends StatefulWidget {
 class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
   late Future<List<_LocalAnalysisEntry>> _entriesFuture;
 
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +33,8 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
     final List<String> encodedList = prefs.getStringList(storageKey) ?? [];
 
     return encodedList.reversed.map((encoded) {
-      final Map<String, dynamic> map = jsonDecode(encoded) as Map<String, dynamic>;
+      final Map<String, dynamic> map =
+          jsonDecode(encoded) as Map<String, dynamic>;
       return _LocalAnalysisEntry.fromJson(map);
     }).toList();
   }
@@ -47,45 +47,50 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
         final bool isDark = theme.brightness == Brightness.dark;
         final Color dialogColor =
             isDark ? const Color(0xFF2A2A2A) : theme.colorScheme.surface;
-        final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
+        final Color textColor =
+            theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
         return AlertDialog(
           backgroundColor: dialogColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Silinsin mi?',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-        content: Text(
-          'Bu analizi silmek istediğine emin misin?',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: textColor.withOpacity(0.8),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'İptal',
-              style: TextStyle(color: textColor.withOpacity(0.7)),
+          title: Text(
+            'Silinsin mi?',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
-          TextButton(
-            style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all(theme.colorScheme.error),
+          content: Text(
+            'Bu analizi silmek istediğine emin misin?',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: textColor.withOpacity(0.8),
             ),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Sil',
-              style: TextStyle(
-                color: theme.colorScheme.onError,
-                fontWeight: FontWeight.bold,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'İptal',
+                style: TextStyle(color: textColor.withOpacity(0.7)),
               ),
             ),
-          ),
-        ],
+            TextButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(
+                  theme.colorScheme.error,
+                ),
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                'Sil',
+                style: TextStyle(
+                  color: theme.colorScheme.onError,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
@@ -99,7 +104,8 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
 
     final int indexToRemove = encodedList.indexWhere((encoded) {
       try {
-        final Map<String, dynamic> map = jsonDecode(encoded) as Map<String, dynamic>;
+        final Map<String, dynamic> map =
+            jsonDecode(encoded) as Map<String, dynamic>;
         return map['timestamp'] == entry.timestamp;
       } catch (_) {
         return false;
@@ -120,46 +126,46 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
 
     return Material(
       color: Colors.transparent,
       child: Container(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           child: FutureBuilder<List<_LocalAnalysisEntry>>(
             future: _entriesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
-                    child: CircularProgressIndicator(
-                  color: theme.colorScheme.primary,
-                ));
+                  child: CircularProgressIndicator(
+                    color: theme.colorScheme.primary,
+                  ),
+                );
               }
               final entries = snapshot.data ?? [];
 
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                    children: [
+                      children: [
                         IconButton(
-                        icon: Icon(
+                          icon: Icon(
                             Icons.arrow_back_ios_new_rounded,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            color: theme.colorScheme.onSurface.withOpacity(0.7),
                             size: 22,
                           ),
                           onPressed: () {
@@ -190,21 +196,27 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                     if (entries.isEmpty)
                       Column(
                         children: [
-                          SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.25,
+                          ),
                           Center(
                             child: Padding(
                               padding: const EdgeInsets.all(24.0),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.history,
-                                      size: 48,
-                                      color: theme.colorScheme.onSurface.withOpacity(0.5)),
+                                  Icon(
+                                    Icons.history,
+                                    size: 48,
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.5),
+                                  ),
                                   const SizedBox(height: 12),
                                   Text(
                                     'Kayıtlı analiz bulunamadı',
                                     style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface.withOpacity(0.8),
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.8),
                                       fontSize: 16,
                                     ),
                                   ),
@@ -229,7 +241,9 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => _AnalysisDetailPage(entry: entry),
+                                  builder:
+                                      (context) =>
+                                          _AnalysisDetailPage(entry: entry),
                                 ),
                               );
                             },
@@ -251,7 +265,7 @@ class _AnalysisTile extends StatelessWidget {
   final _LocalAnalysisEntry entry;
   final VoidCallback onDelete;
   final VoidCallback onTap;
-  
+
   const _AnalysisTile({
     required this.entry,
     required this.onDelete,
@@ -264,15 +278,15 @@ class _AnalysisTile extends StatelessWidget {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
     final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
     final date = DateTime.tryParse(entry.timestamp);
-    final formatted = date != null
-        ? '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}'
-        : entry.timestamp;
+    final formatted =
+        date != null
+            ? '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}'
+            : entry.timestamp;
 
     Widget? leadingImage;
     if (entry.imagePath != null &&
@@ -305,8 +319,10 @@ class _AnalysisTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               leadingImage ??
-                  Icon(Icons.analytics_outlined,
-                      color: theme.colorScheme.primary),
+                  Icon(
+                    Icons.analytics_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -359,21 +375,24 @@ class _LocalAnalysisEntry {
         timestamp: json['timestamp'] as String? ?? '',
         imagePath: json['imagePath'] as String?,
         imageUrl: json['imageUrl'] as String?,
-        analysis: SkinAnalysisResult.fromJson(json['analysis'] as Map<String, dynamic>),
+        analysis: SkinAnalysisResult.fromJson(
+          json['analysis'] as Map<String, dynamic>,
+        ),
       );
     }
-    
+
     final List sectionsJson = json['sections'] as List? ?? [];
     return _LocalAnalysisEntry(
       timestamp: json['timestamp'] as String? ?? '',
       imagePath: json['imagePath'] as String?,
       imageUrl: json['imageUrl'] as String?,
-      sections: sectionsJson
-          .map((e) => _LocalSection.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      sections:
+          sectionsJson
+              .map((e) => _LocalSection.fromJson(e as Map<String, dynamic>))
+              .toList(),
     );
   }
-  
+
   int get sectionCount {
     if (analysis != null) {
       int count = 0;
@@ -411,9 +430,10 @@ class _DeletePillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    final Color pillColor = isDark
-        ? Colors.redAccent.withOpacity(0.1)
-        : theme.colorScheme.error.withOpacity(0.15);
+    final Color pillColor =
+        isDark
+            ? Colors.redAccent.withOpacity(0.1)
+            : theme.colorScheme.error.withOpacity(0.15);
 
     return Material(
       color: pillColor,
@@ -464,16 +484,14 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -507,27 +525,29 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Resim gösterimi - Modern tasarım
                   if (widget.entry.imagePath != null ||
                       widget.entry.imageUrl != null)
                     _buildImageSection(theme),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Analiz sonuçları
                   if (widget.entry.analysis != null)
                     _buildAnalysisResults(widget.entry.analysis!, theme)
                   else if (widget.entry.sections != null)
                     ...widget.entry.sections!
-                        .map((s) => _buildAnalysisCard(
-                              title: s.title,
-                              content: s.content,
-                              icon: _getIconForSection(s.title),
-                              theme: theme,
-                            ))
+                        .map(
+                          (s) => _buildAnalysisCard(
+                            title: s.title,
+                            content: s.content,
+                            icon: _getIconForSection(s.title),
+                            theme: theme,
+                          ),
+                        )
                         .toList(),
-                  
+
                   const SizedBox(height: 16),
                 ],
               ),
@@ -539,7 +559,8 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
   }
 
   Widget _buildImageSection(ThemeData theme) {
-    final hasLocalFile = widget.entry.imagePath != null &&
+    final hasLocalFile =
+        widget.entry.imagePath != null &&
         widget.entry.imagePath!.isNotEmpty &&
         File(widget.entry.imagePath!).existsSync();
     final hasNetworkImage =
@@ -588,10 +609,7 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              border: Border.all(
-                color: primary.withOpacity(0.3),
-                width: 2,
-              ),
+              border: Border.all(color: primary.withOpacity(0.3), width: 2),
             ),
             padding: EdgeInsets.all(8),
             child: ClipRRect(
@@ -603,45 +621,50 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => FullScreenImageViewer(
-                            imageUrl: widget.entry.imageUrl,
-                            imagePath: widget.entry.imagePath,
-                            isLocalFile: hasLocalFile,
-                          ),
+                          builder:
+                              (context) => FullScreenImageViewer(
+                                imageUrl: widget.entry.imageUrl,
+                                imagePath: widget.entry.imagePath,
+                                isLocalFile: hasLocalFile,
+                              ),
                         ),
                       );
                     },
                     child: Hero(
-                      tag: widget.entry.imagePath ?? widget.entry.imageUrl ?? '',
-                      child: hasLocalFile
-                          ? Image.file(
-                              File(widget.entry.imagePath!),
-                              height: 240,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                          : Image.network(
-                              widget.entry.imageUrl!,
-                              height: 240,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
+                      tag:
+                          widget.entry.imagePath ?? widget.entry.imageUrl ?? '',
+                      child:
+                          hasLocalFile
+                              ? Image.file(
+                                File(widget.entry.imagePath!),
                                 height: 240,
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.black26
-                                      : Colors.grey.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.broken_image,
-                                    color: Colors.white54,
-                                    size: 50,
-                                  ),
-                                ),
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                              : Image.network(
+                                widget.entry.imageUrl!,
+                                height: 240,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stackTrace) => Container(
+                                      height: 240,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isDark
+                                                ? Colors.black26
+                                                : Colors.grey.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          color: Colors.white54,
+                                          size: 50,
+                                        ),
+                                      ),
+                                    ),
                               ),
-                            ),
                     ),
                   ),
                   Positioned(
@@ -651,8 +674,9 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                     child: Container(
                       height: 100,
                       decoration: BoxDecoration(
-                        borderRadius:
-                            BorderRadius.vertical(bottom: Radius.circular(18)),
+                        borderRadius: BorderRadius.vertical(
+                          bottom: Radius.circular(18),
+                        ),
                         gradient: LinearGradient(
                           colors: [
                             Colors.transparent,
@@ -668,8 +692,10 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                     top: 12,
                     right: 12,
                     child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -737,11 +763,12 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => FullScreenImageViewer(
-                                  imageUrl: widget.entry.imageUrl,
-                                  imagePath: widget.entry.imagePath,
-                                  isLocalFile: hasLocalFile,
-                                ),
+                                builder:
+                                    (context) => FullScreenImageViewer(
+                                      imageUrl: widget.entry.imageUrl,
+                                      imagePath: widget.entry.imagePath,
+                                      isLocalFile: hasLocalFile,
+                                    ),
                               ),
                             );
                           },
@@ -784,10 +811,7 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
               height: 150,
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  colors: [
-                    primary.withOpacity(0.15),
-                    Colors.transparent,
-                  ],
+                  colors: [primary.withOpacity(0.15), Colors.transparent],
                 ),
               ),
             ),
@@ -808,21 +832,24 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
             icon: Icons.waving_hand,
             theme: theme,
           ),
-        
+
         // Bütüncül Cilt Analizi - AÇIK
         if (result.butunculCiltAnalizi != null)
           _buildButunculCiltAnaliziCard(result.butunculCiltAnalizi!, theme),
-        
+
         // Kişiselleştirilmiş Bakım Planı
         if (result.kisisellestirilmisBakimPlani != null)
           _buildBakimPlaniCard(result.kisisellestirilmisBakimPlani!, theme),
-        
+
         // Ürün Önerileri - GENİŞLETİLEBİLİR
         if (result.outputUrun != null && result.outputUrun!.isNotEmpty)
           _buildExpandableRoutineCard(
             title: 'Ürün Önerileri',
             icon: Icons.shopping_bag_outlined,
-            gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+            gradient: [
+              Colors.pink.withOpacity(0.3),
+              Colors.pinkAccent.withOpacity(0.2),
+            ],
             isExpanded: _isUrunOnerileriExpanded,
             onTap: () {
               setState(() {
@@ -832,15 +859,20 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
             content: _formatUrunOnerileri(result.outputUrun!),
             theme: theme,
           ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Makyaj Önerileri - GENİŞLETİLEBİLİR
         if (result.makyajRenkOnerileri != null)
           _buildExpandableRoutineCard(
-            title: result.makyajRenkOnerileri!.baslik ?? 'Makyaj ve Renk Önerileri',
+            title:
+                result.makyajRenkOnerileri!.baslik ??
+                'Makyaj ve Renk Önerileri',
             icon: Icons.brush_outlined,
-            gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+            gradient: [
+              Colors.pink.withOpacity(0.3),
+              Colors.pinkAccent.withOpacity(0.2),
+            ],
             isExpanded: _isMakyajOnerileriExpanded,
             onTap: () {
               setState(() {
@@ -851,14 +883,19 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
             theme: theme,
           ),
 
-          const SizedBox(height: 12),
-        
+        const SizedBox(height: 12),
+
         // Notlar ve İpuçları - GENİŞLETİLEBİLİR
         if (result.onemliNotlarIpuclari != null)
           _buildExpandableRoutineCard(
-            title: result.onemliNotlarIpuclari!.baslik ?? 'Önemli Notlar ve İpuçları',
+            title:
+                result.onemliNotlarIpuclari!.baslik ??
+                'Önemli Notlar ve İpuçları',
             icon: Icons.lightbulb_outline,
-            gradient: [Colors.yellow.withOpacity(0.4), Colors.yellow.withOpacity(0.3)],
+            gradient: [
+              Colors.pink.withOpacity(0.3),
+              Colors.pinkAccent.withOpacity(0.2),
+            ],
             isExpanded: _isNotlarIpuclariExpanded,
             onTap: () {
               setState(() {
@@ -869,13 +906,16 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
             theme: theme,
             forceGradient: true,
           ),
-          const SizedBox(height: 12),
+        const SizedBox(height: 12),
         // Kapanış - GENİŞLETİLEBİLİR
         if (result.kapanisNotu != null)
           _buildExpandableRoutineCard(
             title: 'Kapanış',
             icon: Icons.favorite,
-            gradient: [Colors.deepPurple.withOpacity(0.4), Colors.deepPurple.withOpacity(0.3)],
+            gradient: [
+              Colors.pink.withOpacity(0.3),
+              Colors.pinkAccent.withOpacity(0.2),
+            ],
             isExpanded: _isKapanisNotuExpanded,
             onTap: () {
               setState(() {
@@ -885,14 +925,15 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
             content: result.kapanisNotu!,
             theme: theme,
             forceGradient: true,
-            
           ),
       ],
     );
   }
 
   Widget _buildButunculCiltAnaliziCard(
-      ButunculCiltAnalizi analiz, ThemeData theme) {
+    ButunculCiltAnalizi analiz,
+    ThemeData theme,
+  ) {
     return _buildAnalysisCard(
       title: analiz.baslik ?? 'Bütüncül Cilt Analizi',
       content: _buildButunculCiltAnaliziContent(analiz),
@@ -903,47 +944,59 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
 
   String _buildButunculCiltAnaliziContent(ButunculCiltAnalizi analiz) {
     final buffer = StringBuffer();
-    
+
     if (analiz.gorselDegerlendirme != null) {
       buffer.writeln('📸 Görsel Değerlendirme:');
       if (analiz.gorselDegerlendirme!.ciltTonu != null) {
         buffer.writeln('• Cilt Tonu: ${analiz.gorselDegerlendirme!.ciltTonu}');
       }
       if (analiz.gorselDegerlendirme!.ciltAltTonu != null) {
-        buffer.writeln('• Cilt Alt Tonu: ${analiz.gorselDegerlendirme!.ciltAltTonu}');
+        buffer.writeln(
+          '• Cilt Alt Tonu: ${analiz.gorselDegerlendirme!.ciltAltTonu}',
+        );
       }
       if (analiz.gorselDegerlendirme!.tespitEdilenDurumlar != null) {
-        buffer.writeln('• Tespit Edilen Durumlar: ${analiz.gorselDegerlendirme!.tespitEdilenDurumlar}');
+        buffer.writeln(
+          '• Tespit Edilen Durumlar: ${analiz.gorselDegerlendirme!.tespitEdilenDurumlar}',
+        );
       }
       buffer.writeln('');
     }
-    
+
     if (analiz.yasamTarziEtkileri != null) {
       buffer.writeln('💤 Yaşam Tarzı Etkileri:');
       if (analiz.yasamTarziEtkileri!.uykuEtkisi != null) {
         buffer.writeln('• Uyku: ${analiz.yasamTarziEtkileri!.uykuEtkisi}');
       }
       if (analiz.yasamTarziEtkileri!.sigaraVeDigerEtkiler != null) {
-        buffer.writeln('• Sigara: ${analiz.yasamTarziEtkileri!.sigaraVeDigerEtkiler}');
+        buffer.writeln(
+          '• Sigara: ${analiz.yasamTarziEtkileri!.sigaraVeDigerEtkiler}',
+        );
       }
       buffer.writeln('');
     }
-    
-          if (analiz.mevcutRutinDegerlendirmesi != null) {
+
+    if (analiz.mevcutRutinDegerlendirmesi != null) {
       buffer.writeln('🔍 Mevcut Rutin Değerlendirmesi:');
       if (analiz.mevcutRutinDegerlendirmesi!.ciltTipiVeTemizlikYorumu != null) {
-        buffer.writeln('• ${analiz.mevcutRutinDegerlendirmesi!.ciltTipiVeTemizlikYorumu}');
+        buffer.writeln(
+          '• ${analiz.mevcutRutinDegerlendirmesi!.ciltTipiVeTemizlikYorumu}',
+        );
       }
       if (analiz.mevcutRutinDegerlendirmesi!.mevcutAdimlarVeEksikler != null) {
-        buffer.writeln('• ${analiz.mevcutRutinDegerlendirmesi!.mevcutAdimlarVeEksikler}');
+        buffer.writeln(
+          '• ${analiz.mevcutRutinDegerlendirmesi!.mevcutAdimlarVeEksikler}',
+        );
       }
     }
-    
+
     return buffer.toString();
   }
 
   Widget _buildBakimPlaniCard(
-      KisisellestirilmisBakimPlani plan, ThemeData theme) {
+    KisisellestirilmisBakimPlani plan,
+    ThemeData theme,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -951,21 +1004,25 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
           // Ana başlık kartı
           _buildAnalysisCard(
             title: plan.baslik ?? 'Kişiselleştirilmiş Bakım Planı',
-            content: plan.oncelikliHedef != null 
-                ? '🎯 Öncelikli Hedef:\n${plan.oncelikliHedef}' 
-                : '',
+            content:
+                plan.oncelikliHedef != null
+                    ? '🎯 Öncelikli Hedef:\n${plan.oncelikliHedef}'
+                    : '',
             icon: Icons.spa_outlined,
             theme: theme,
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Sabah Rutini
           if (plan.sabahRutini != null)
             _buildExpandableRoutineCard(
               title: plan.sabahRutini!.baslik ?? 'Sabah Rutini',
               icon: Icons.wb_sunny_outlined,
-              gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+              gradient: [
+                Colors.pink.withOpacity(0.3),
+                Colors.pinkAccent.withOpacity(0.2),
+              ],
               isExpanded: _isSabahRutiniExpanded,
               onTap: () {
                 setState(() {
@@ -975,15 +1032,18 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
               content: _buildSabahRutiniContent(plan.sabahRutini!),
               theme: theme,
             ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Akşam Rutini
           if (plan.aksamRutini != null)
             _buildExpandableRoutineCard(
               title: plan.aksamRutini!.baslik ?? 'Akşam Rutini',
               icon: Icons.nightlight_round,
-              gradient: [Colors.pink.withOpacity(0.3), Colors.pinkAccent.withOpacity(0.2)],
+              gradient: [
+                Colors.pink.withOpacity(0.3),
+                Colors.pinkAccent.withOpacity(0.2),
+              ],
               isExpanded: _isAksamRutiniExpanded,
               onTap: () {
                 setState(() {
@@ -1000,7 +1060,7 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
 
   String _buildSabahRutiniContent(dynamic sabahRutini) {
     final buffer = StringBuffer();
-    
+
     if (sabahRutini.adim1Temizleme != null) {
       buffer.writeln('1️⃣ Temizleme\n${sabahRutini.adim1Temizleme}\n');
     }
@@ -1013,18 +1073,22 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
     if (sabahRutini.adim4Koruma != null) {
       buffer.writeln('4️⃣ Koruma\n${sabahRutini.adim4Koruma}');
     }
-    
+
     return buffer.toString().trim();
   }
 
   String _buildAksamRutiniContent(dynamic aksamRutini) {
     final buffer = StringBuffer();
-    
+
     if (aksamRutini.adim1CiftAsamaliTemizlemeYag != null) {
-      buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Yağ)\n${aksamRutini.adim1CiftAsamaliTemizlemeYag}\n');
+      buffer.writeln(
+        '1️⃣ Çift Aşamalı Temizleme (Yağ)\n${aksamRutini.adim1CiftAsamaliTemizlemeYag}\n',
+      );
     }
     if (aksamRutini.adim1CiftAsamaliTemizlemeSu != null) {
-      buffer.writeln('1️⃣ Çift Aşamalı Temizleme (Su)\n${aksamRutini.adim1CiftAsamaliTemizlemeSu}\n');
+      buffer.writeln(
+        '1️⃣ Çift Aşamalı Temizleme (Su)\n${aksamRutini.adim1CiftAsamaliTemizlemeSu}\n',
+      );
     }
     if (aksamRutini.adim2Tonik != null) {
       buffer.writeln('2️⃣ Tonik\n${aksamRutini.adim2Tonik}\n');
@@ -1038,19 +1102,19 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
     if (aksamRutini.ekAdimGozKremi != null) {
       buffer.writeln('✨ Ek Adım - Göz Kremi\n${aksamRutini.ekAdimGozKremi}');
     }
-    
+
     return buffer.toString().trim();
   }
 
   String _buildMakyajOnerileriContent(MakyajRenkOnerileri oneriler) {
     final buffer = StringBuffer();
-    
+
     if (oneriler.altTonPaleti != null) {
       buffer.writeln('🎨 Alt Ton Paleti:');
       buffer.writeln('${oneriler.altTonPaleti}');
       buffer.writeln('');
     }
-    
+
     if (oneriler.onerilerErkekIcin != null) {
       buffer.writeln('👨 Erkekler İçin Öneriler:');
       if (oneriler.onerilerErkekIcin!.tenUrunu != null) {
@@ -1060,34 +1124,34 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
         buffer.writeln('• Kapatıcı: ${oneriler.onerilerErkekIcin!.kapatici}');
       }
     }
-    
+
     return buffer.toString().trim();
   }
 
   String _buildNotlarIpuclariContent(OnemliNotlarIpuclari notlar) {
     final buffer = StringBuffer();
-    
+
     if (notlar.alerjilerNotu != null) {
       buffer.writeln('⚠️ Alerjiler:');
       buffer.writeln('${notlar.alerjilerNotu}');
       buffer.writeln('');
     }
-    
+
     if (notlar.icerikUyarisi != null) {
       buffer.writeln('💡 İçerik Uyarısı:');
       buffer.writeln('${notlar.icerikUyarisi}');
       buffer.writeln('');
     }
-    
+
     if (notlar.yasamTarziIpucu != null) {
       buffer.writeln('🌿 Yaşam Tarzı İpucu:');
       buffer.writeln('${notlar.yasamTarziIpucu}');
     }
-    
+
     return buffer.toString().trim();
   }
 
- Widget _buildExpandableRoutineCard({
+  Widget _buildExpandableRoutineCard({
     required String title,
     required IconData icon,
     required List<Color> gradient,
@@ -1095,8 +1159,10 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
     required VoidCallback onTap,
     required String content,
     required ThemeData theme,
-    Color? customContentBg, // YENİ: Özel arka plan rengi (Kapanış için mor olacak)
-    bool forceGradient = false, // Artık her zaman gradient olduğu için etkisi yok ama hata vermemesi için bıraktım
+    Color?
+    customContentBg, // YENİ: Özel arka plan rengi (Kapanış için mor olacak)
+    bool forceGradient =
+        false, // Artık her zaman gradient olduğu için etkisi yok ama hata vermemesi için bıraktım
   }) {
     // --- RENK VE STİL AYARLARI ---
 
@@ -1160,9 +1226,10 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                       onTap: onTap,
                       borderRadius: BorderRadius.vertical(
                         top: const Radius.circular(24),
-                        bottom: isExpanded
-                            ? Radius.zero
-                            : const Radius.circular(24),
+                        bottom:
+                            isExpanded
+                                ? Radius.zero
+                                : const Radius.circular(24),
                       ),
                       child: Container(
                         padding: const EdgeInsets.all(20),
@@ -1178,7 +1245,7 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.1),
                                     blurRadius: 10,
-                                  )
+                                  ),
                                 ],
                               ),
                               child: Icon(icon, color: Colors.white, size: 24),
@@ -1230,27 +1297,30 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
                   AnimatedSize(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
-                    child: isExpanded
-                        ? Container(
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                              color: contentBackground, // Özel renk burada kullanılıyor
-                              borderRadius: const BorderRadius.vertical(
-                                  bottom: Radius.circular(24)),
-                            ),
-                            padding: const EdgeInsets.all(20),
-                            child: Text(
-                              content,
-                              style: TextStyle(
-                                color: contentTextColor,
-                                fontSize: 15,
-                                height: 1.6,
-                                letterSpacing: 0.3,
-                                fontWeight: FontWeight.w600,
+                    child:
+                        isExpanded
+                            ? Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color:
+                                    contentBackground, // Özel renk burada kullanılıyor
+                                borderRadius: const BorderRadius.vertical(
+                                  bottom: Radius.circular(24),
+                                ),
                               ),
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+                              padding: const EdgeInsets.all(20),
+                              child: Text(
+                                content,
+                                style: TextStyle(
+                                  color: contentTextColor,
+                                  fontSize: 15,
+                                  height: 1.6,
+                                  letterSpacing: 0.3,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                            : const SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -1261,253 +1331,269 @@ class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
     );
   }
 
-Widget _buildAnalysisCard({
-  required String title,
-  required String content,
-  required IconData icon,
-  required ThemeData theme,
-}) {
-  final bool isDark = theme.brightness == Brightness.dark;
-  final Color accent = theme.colorScheme.primary;
-  final Color accent2 = theme.colorScheme.secondary;
+  Widget _buildAnalysisCard({
+    required String title,
+    required String content,
+    required IconData icon,
+    required ThemeData theme,
+  }) {
+    final bool isDark = theme.brightness == Brightness.dark;
+    final Color accent = theme.colorScheme.primary;
+    final Color accent2 = theme.colorScheme.secondary;
 
-  // --- RENK PALETİ ---
-  final Color glassCardBg = Colors.pink.shade400.withOpacity(0.25);
-  final Color glassContentBoxBg = Colors.pink.shade50.withOpacity(0.4);
-  final Color glassAccent = Colors.pink.shade600.withOpacity(0.6);
-  final Color glassBorder = Colors.pink.shade700.withOpacity(0.2);
+    // --- RENK PALETİ ---
+    final Color glassCardBg = Colors.pink.shade400.withOpacity(0.25);
+    final Color glassContentBoxBg = Colors.pink.shade50.withOpacity(0.4);
+    final Color glassAccent = Colors.pink.shade600.withOpacity(0.6);
+    final Color glassBorder = Colors.pink.shade700.withOpacity(0.2);
 
-  // --- GLOW RENGİ ---
-  final Color glowColor = isDark
-      ? accent.withOpacity(0.15)
-      : Colors.pink.shade400.withOpacity(0.2);
+    // --- GLOW RENGİ ---
+    final Color glowColor =
+        isDark
+            ? accent.withOpacity(0.15)
+            : Colors.pink.shade400.withOpacity(0.2);
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 16),
-    child: Stack(
-      children: [
-        // --- HAFİF GÖLGE EFEKTİ ---
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: glowColor,
-                  blurRadius: 18,
-                  spreadRadius: -3,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: glowColor.withOpacity(isDark ? 0.05 : 0.1),
-                  blurRadius: 30,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 0),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Stack(
+        children: [
+          // --- HAFİF GÖLGE EFEKTİ ---
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: glowColor,
+                    blurRadius: 18,
+                    spreadRadius: -3,
+                    offset: const Offset(0, 8),
+                  ),
+                  BoxShadow(
+                    color: glowColor.withOpacity(isDark ? 0.05 : 0.1),
+                    blurRadius: 30,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 0),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // --- ANA KART ---
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                // 1. Blur (Sadece Açık Mod)
+                if (!isDark)
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+
+                // 2. Kart Yapısı ve Zemin Rengi
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    color: isDark ? null : glassCardBg,
+                    gradient:
+                        isDark
+                            ? LinearGradient(
+                              colors: [
+                                Colors.white.withOpacity(0.12),
+                                Colors.white.withOpacity(0.05),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                            : null,
+                    border: Border.all(
+                      color: isDark ? accent.withOpacity(0.3) : glassBorder,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      // --- YANSIMA EFEKTİ (DÜZENLENDİ) ---
+
+                      // KOYU MOD İÇİN ESKİ YANSIMA (Sağ üst köşe)
+                      if (isDark)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Container(
+                            width: 150,
+                            height: 150,
+                            decoration: BoxDecoration(
+                              gradient: RadialGradient(
+                                colors: [
+                                  accent.withOpacity(0.15),
+                                  Colors.transparent,
+                                ],
+                                radius: 1.0,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // AÇIK MOD İÇİN YENİ PÜRÜZSÜZ GEÇİŞ (Tüm kart yüzeyi)
+                      if (!isDark)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft, // Sol üstten
+                                end: Alignment.bottomRight, // Sağ alta doğru
+                                colors: [
+                                  // Çok hafif beyazımsı/pembe ışık
+                                  Colors.white.withOpacity(0.3),
+                                  // Ortaya gelmeden kaybolan geçiş
+                                  Colors.transparent,
+                                ],
+                                // Geçişin nerede başlayıp biteceği (daha yumuşak olması için)
+                                stops: const [0.0, 0.5],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // --- İÇERİK ---
+                      Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                // İkon Kutusu
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? null : glassAccent,
+                                    gradient:
+                                        isDark
+                                            ? LinearGradient(
+                                              colors: [accent, accent2],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            )
+                                            : null,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            isDark
+                                                ? accent.withOpacity(0.2)
+                                                : Colors.pink.shade700
+                                                    .withOpacity(0.25),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    icon,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // BAŞLIK: Hep Beyaz
+                                      Text(
+                                        title,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(
+                                                0.4,
+                                              ),
+                                              offset: const Offset(0, 2),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      // Alt Çizgi
+                                      Container(
+                                        height: 3,
+                                        width: 40,
+                                        decoration: BoxDecoration(
+                                          color: isDark ? null : glassAccent,
+                                          gradient:
+                                              isDark
+                                                  ? LinearGradient(
+                                                    colors: [accent, accent2],
+                                                  )
+                                                  : null,
+                                          borderRadius: BorderRadius.circular(
+                                            2,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+
+                            // Metin Kutusu
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color:
+                                    isDark
+                                        ? Colors.black.withOpacity(0.2)
+                                        : glassContentBoxBg,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color:
+                                      isDark
+                                          ? theme.dividerColor.withOpacity(0.2)
+                                          : Colors.white.withOpacity(0.4),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                content,
+                                style: TextStyle(
+                                  color:
+                                      isDark
+                                          ? Colors.white.withOpacity(0.9)
+                                          : Colors.black87,
+                                  fontSize: 15,
+                                  height: 1.6,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-
-        // --- ANA KART ---
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              // 1. Blur (Sadece Açık Mod)
-              if (!isDark)
-                Positioned.fill(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
-                    child: Container(color: Colors.transparent),
-                  ),
-                ),
-
-              // 2. Kart Yapısı ve Zemin Rengi
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  color: isDark ? null : glassCardBg,
-                  gradient: isDark
-                      ? LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.12),
-                            Colors.white.withOpacity(0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  border: Border.all(
-                    color: isDark ? accent.withOpacity(0.3) : glassBorder,
-                    width: 1.5,
-                  ),
-                ),
-                child: Stack(
-                  children: [
-                    // --- YANSIMA EFEKTİ (DÜZENLENDİ) ---
-
-                    // KOYU MOD İÇİN ESKİ YANSIMA (Sağ üst köşe)
-                    if (isDark)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          width: 150,
-                          height: 150,
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              colors: [
-                                accent.withOpacity(0.15),
-                                Colors.transparent,
-                              ],
-                              radius: 1.0,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // AÇIK MOD İÇİN YENİ PÜRÜZSÜZ GEÇİŞ (Tüm kart yüzeyi)
-                    if (!isDark)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft, // Sol üstten
-                              end: Alignment.bottomRight, // Sağ alta doğru
-                              colors: [
-                                // Çok hafif beyazımsı/pembe ışık
-                                Colors.white.withOpacity(0.3),
-                                // Ortaya gelmeden kaybolan geçiş
-                                Colors.transparent,
-                              ],
-                              // Geçişin nerede başlayıp biteceği (daha yumuşak olması için)
-                              stops: const [0.0, 0.5],
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // --- İÇERİK ---
-                    Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              // İkon Kutusu
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: isDark ? null : glassAccent,
-                                  gradient: isDark
-                                      ? LinearGradient(
-                                          colors: [accent, accent2],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : null,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isDark
-                                          ? accent.withOpacity(0.2)
-                                          : Colors.pink.shade700.withOpacity(0.25),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  icon,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // BAŞLIK: Hep Beyaz
-                                    Text(
-                                      title,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withOpacity(0.4),
-                                            offset: const Offset(0, 2),
-                                            blurRadius: 4,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    // Alt Çizgi
-                                    Container(
-                                      height: 3,
-                                      width: 40,
-                                      decoration: BoxDecoration(
-                                        color: isDark ? null : glassAccent,
-                                        gradient: isDark
-                                            ? LinearGradient(colors: [accent, accent2])
-                                            : null,
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Metin Kutusu
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: isDark
-                                  ? Colors.black.withOpacity(0.2)
-                                  : glassContentBoxBg,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isDark
-                                  ? theme.dividerColor.withOpacity(0.2)
-                                  : Colors.white.withOpacity(0.4),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              content,
-                              style: TextStyle(
-                                color: isDark
-                                    ? Colors.white.withOpacity(0.9)
-                                    : Colors.black87,
-                                fontSize: 15,
-                                height: 1.6,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   IconData _getIconForSection(String title) {
     final titleLower = title.toLowerCase();
@@ -1518,7 +1604,8 @@ Widget _buildAnalysisCard({
       return Icons.water_drop_outlined;
     } else if (titleLower.contains('akne') || titleLower.contains('acne')) {
       return Icons.healing_outlined;
-    } else if (titleLower.contains('kırışıklık') || titleLower.contains('wrinkle')) {
+    } else if (titleLower.contains('kırışıklık') ||
+        titleLower.contains('wrinkle')) {
       return Icons.auto_fix_high;
     } else if (titleLower.contains('gözenek') || titleLower.contains('pore')) {
       return Icons.lens_blur_outlined;
@@ -1526,7 +1613,8 @@ Widget _buildAnalysisCard({
       return Icons.brightness_medium;
     } else if (titleLower.contains('ton') || titleLower.contains('tone')) {
       return Icons.palette_outlined;
-    } else if (titleLower.contains('öneri') || titleLower.contains('recommendation')) {
+    } else if (titleLower.contains('öneri') ||
+        titleLower.contains('recommendation')) {
       return Icons.lightbulb_outline;
     } else if (titleLower.contains('ürün') || titleLower.contains('product')) {
       return Icons.shopping_bag_outlined;
@@ -1538,19 +1626,28 @@ Widget _buildAnalysisCard({
   String _formatUrunOnerileri(String urunOnerileri) {
     // Markdown formatını daha okunabilir hale getir
     String formatted = urunOnerileri;
-    
+
     // ### başlıkları için
-    formatted = formatted.replaceAllMapped(RegExp(r'###\s+(\d+\.\s+[^\n]+)'), (match) => '\n📦 ${match.group(1)}\n');
-    
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'###\s+(\d+\.\s+[^\n]+)'),
+      (match) => '\n📦 ${match.group(1)}\n',
+    );
+
     // ** kalın yazıları
-    formatted = formatted.replaceAllMapped(RegExp(r'\*\*([^\*]+)\*\*'), (match) => match.group(1) ?? '');
-    
+    formatted = formatted.replaceAllMapped(
+      RegExp(r'\*\*([^\*]+)\*\*'),
+      (match) => match.group(1) ?? '',
+    );
+
     // * liste işaretlerini
-    formatted = formatted.replaceAll(RegExp(r'^\s*\*\s+', multiLine: true), '• ');
-    
+    formatted = formatted.replaceAll(
+      RegExp(r'^\s*\*\s+', multiLine: true),
+      '• ',
+    );
+
     // Fazla boşlukları temizle
     formatted = formatted.replaceAll(RegExp(r'\n{3,}'), '\n\n');
-    
+
     return formatted.trim();
   }
 }
