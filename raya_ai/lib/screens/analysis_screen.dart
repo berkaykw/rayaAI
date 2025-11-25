@@ -119,7 +119,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        // TEST İÇİN HATA DURUMUNDA BİLE PREMIUM
         userTier = 'free'; // 'free';
       });
     }
