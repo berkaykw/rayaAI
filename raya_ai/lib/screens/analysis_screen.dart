@@ -13,6 +13,7 @@ import 'package:raya_ai/widgets-tools/full_screen_image_viewer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:raya_ai/theme/app_theme.dart';
+import 'daily_tracking_screen.dart';
 
 class AnalysisScreen extends StatefulWidget {
   const AnalysisScreen({super.key});
@@ -36,6 +37,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   bool _isSaving = false;
   String? _imageUrlForDisplay;
   File? _selectedImageFile;
+  bool _hasDailyAnalysis = false;
 
   // Yeni: Ürün önerisi tercihleri
   bool _includeProducts = false;
@@ -85,7 +87,8 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       setState(() {});
     });
     _loadUserName();
-    _loadUserTier();
+    _loadUserName();
+    _loadUserTier().then((_) => _checkDailyAnalysisStatus());
   }
 
   void _loadUserName() {
@@ -110,13 +113,56 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
       if (!mounted) return;
       setState(() {
-        userTier = response?['tier'] ?? 'free';
+        // TEST İÇİN PREMIUM YAPILDI
+        userTier = 'free'; // response?['tier'] ?? 'free';
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        userTier = 'free';
+        // TEST İÇİN HATA DURUMUNDA BİLE PREMIUM
+        userTier = 'free'; // 'free';
       });
+    }
+  }
+
+  Future<void> _checkDailyAnalysisStatus() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storageKey = 'analyses_${user.id}';
+      final List<String> existingEncoded =
+          prefs.getStringList(storageKey) ?? [];
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
+      bool found = false;
+      for (var item in existingEncoded) {
+        final Map<String, dynamic> decoded = jsonDecode(item);
+        final timestamp = decoded['timestamp'];
+        final type = decoded['type'];
+        if (timestamp != null) {
+          final date = DateTime.parse(timestamp);
+          final analysisDate = DateTime(date.year, date.month, date.day);
+          if (analysisDate.isAtSameMomentAs(today)) {
+            // type 'daily' veya null (eski kayıtlar) ise günlük analiz yapılmış say
+            if (type == 'daily' || type == null) {
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _hasDailyAnalysis = found;
+        });
+      }
+    } catch (e) {
+      print('Limit kontrolü hatası: $e');
     }
   }
 
@@ -215,23 +261,59 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
     FocusScope.of(context).unfocus();
 
-    setState(() {
-      _isLoading = true;
-      _statusMessage = null;
-      _analysisResult = null;
-    });
-
     // 1. KULLANICI ID'SİNİ AL
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       setState(() {
         _statusMessage =
             "Kullanıcı oturumu bulunamadı. Lütfen tekrar giriş yapın.";
-        _isLoading = false;
       });
       return;
     }
     final String userId = user.id;
+
+    // --- GÜNLÜK LİMİT KONTROLÜ (FREE KULLANICILAR İÇİN) ---
+    if (userTier == 'free') {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final storageKey = 'analyses_$userId';
+        final List<String> existingEncoded =
+            prefs.getStringList(storageKey) ?? [];
+
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        bool hasAnalysisToday = false;
+
+        for (var item in existingEncoded) {
+          final Map<String, dynamic> decoded = jsonDecode(item);
+          final timestamp = decoded['timestamp'];
+          if (timestamp != null) {
+            final date = DateTime.parse(timestamp);
+            final analysisDate = DateTime(date.year, date.month, date.day);
+            if (analysisDate.isAtSameMomentAs(today)) {
+              hasAnalysisToday = true;
+              break;
+            }
+          }
+        }
+
+        if (hasAnalysisToday) {
+          _showPremiumDialog();
+          return; // Analizi başlatma
+        }
+      } catch (e) {
+        print('Limit kontrolü hatası: $e');
+        // Hata olsa bile devam etsin mi? Şimdilik devam etsin, kullanıcı mağdur olmasın.
+      }
+    }
+    // -------------------------------------------------------
+
+    setState(() {
+      _isLoading = true;
+      _statusMessage = null;
+      _analysisResult = null;
+    });
 
     try {
       // 2. SERVİSİ YENİ PARAMETRELERLE ÇAĞIR (GÜNCELLENDİ)
@@ -286,11 +368,35 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       final List<String> existingEncoded =
           prefs.getStringList(storageKey) ?? [];
 
+      // Check if daily analysis exists for today
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      bool hasDailyToday = false;
+
+      for (var item in existingEncoded) {
+        try {
+          final Map<String, dynamic> decoded = jsonDecode(item);
+          final timestamp = decoded['timestamp'];
+          final type = decoded['type'];
+          if (timestamp != null && type == 'daily') {
+            final date = DateTime.parse(timestamp);
+            final analysisDate = DateTime(date.year, date.month, date.day);
+            if (analysisDate.isAtSameMomentAs(today)) {
+              hasDailyToday = true;
+              break;
+            }
+          }
+        } catch (_) {}
+      }
+
+      final String analysisType = hasDailyToday ? 'normal' : 'daily';
+
       final Map<String, dynamic> entry = {
         'timestamp': DateTime.now().toIso8601String(),
         'imagePath': _selectedImageFile?.path,
         'imageUrl': _imageUrlForDisplay,
         'analysis': _analysisResult!.toJson(),
+        'type': analysisType,
       };
 
       existingEncoded.add(jsonEncode(entry));
@@ -298,6 +404,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
       if (mounted) {
         _showSuccess('Analiz kaydedildi');
+        _checkDailyAnalysisStatus();
       }
     } catch (e) {
       if (mounted) {
@@ -709,49 +816,86 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                 ),
                               ],
                             ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color:
-                                    _isDarkTheme
-                                        ? Colors.white.withOpacity(0.1)
-                                        : Colors.black.withOpacity(0.05),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _cardBorderColor,
-                                  width: 1,
-                                ),
-                              ),
-                              child: IconButton(
-                                onPressed: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder:
-                                          (_, __, ___) => ProfileScreen(
-                                            initialSelectedIndex:
-                                                _selectedIndex,
-                                          ),
-                                      transitionDuration: const Duration(
-                                        milliseconds: 350,
-                                      ),
-                                      transitionsBuilder: (
-                                        _,
-                                        animation,
-                                        __,
-                                        child,
-                                      ) {
-                                        return FadeTransition(
-                                          opacity: animation,
-                                          child: child,
-                                        );
-                                      },
+                            Row(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        _isDarkTheme
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _cardBorderColor,
+                                      width: 1,
                                     ),
-                                  );
-                                },
-                                icon: const Icon(Icons.person_outline_rounded),
-                                iconSize: 25,
-                                color: _primaryTextColor,
-                              ),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  const DailyTrackingScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.calendar_today_outlined,
+                                    ),
+                                    iconSize: 25,
+                                    color: _primaryTextColor,
+                                  ),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        _isDarkTheme
+                                            ? Colors.white.withOpacity(0.1)
+                                            : Colors.black.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _cardBorderColor,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        PageRouteBuilder(
+                                          pageBuilder:
+                                              (_, __, ___) => ProfileScreen(
+                                                initialSelectedIndex:
+                                                    _selectedIndex,
+                                              ),
+                                          transitionDuration: const Duration(
+                                            milliseconds: 350,
+                                          ),
+                                          transitionsBuilder: (
+                                            _,
+                                            animation,
+                                            __,
+                                            child,
+                                          ) {
+                                            return FadeTransition(
+                                              opacity: animation,
+                                              child: child,
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.person_outline_rounded,
+                                    ),
+                                    iconSize: 25,
+                                    color: _primaryTextColor,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -3219,7 +3363,344 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 24),
+        if (_hasDailyAnalysis && userTier == 'free') ...[
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+            margin: const EdgeInsets.symmetric(horizontal: 24),
+            decoration: BoxDecoration(
+              color:
+                  _isDarkTheme
+                      ? Colors.red.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color:
+                    _isDarkTheme
+                        ? Colors.redAccent.withOpacity(0.3)
+                        : Colors.redAccent.withOpacity(0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: Colors.redAccent,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Günlük analiz hakkınız doldu.',
+                    style: TextStyle(
+                      color:
+                          _isDarkTheme
+                              ? Colors.redAccent.withOpacity(0.9)
+                              : Colors.red[700],
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: _showPremiumDialog,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    foregroundColor: Colors.redAccent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Premium\'a Geç',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded, size: 14),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ] else ...[
+          if (_hasDailyAnalysis) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Günlük analizinizi tamamladınız.',
+                      style: TextStyle(
+                        color:
+                            _isDarkTheme
+                                ? Colors.greenAccent
+                                : Colors.green[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+          ],
+          if (!_hasDailyAnalysis)
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFE23F75), Color(0xFFE195B0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0xFFE23F75).withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder:
+                          (context) => Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  _isDarkTheme
+                                      ? Color(0xFF1E1E1E).withOpacity(0.45)
+                                      : Colors.white.withOpacity(0.25),
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(32),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 20,
+                                  offset: Offset(0, -5),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(32),
+                              ),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 10,
+                                  sigmaY: 10,
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    24,
+                                    12,
+                                    24,
+                                    40,
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 4,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              _isDarkTheme
+                                                  ? Colors.white.withOpacity(
+                                                    0.2,
+                                                  )
+                                                  : Colors.grey.withOpacity(
+                                                    0.3,
+                                                  ),
+                                          borderRadius: BorderRadius.circular(
+                                            2,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 24),
+                                      Text(
+                                        'Fotoğraf Kaynağı',
+                                        style: TextStyle(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              _isDarkTheme
+                                                  ? Colors.white
+                                                  : Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Analiz için bir fotoğraf yükleyin',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color:
+                                              _isDarkTheme
+                                                  ? Colors.white54
+                                                  : Colors.white70,
+                                        ),
+                                      ),
+                                      SizedBox(height: 32),
+                                      Row(
+                                        children: [
+                                          _buildImageSourceOption(
+                                            icon: Icons.camera_alt_rounded,
+                                            label: 'Kamera',
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              _pickImageFromCamera();
+                                            },
+                                            isDark: _isDarkTheme,
+                                          ),
+                                          _buildImageSourceOption(
+                                            icon: Icons.photo_library_rounded,
+                                            label: 'Galeri',
+                                            onTap: () {
+                                              Navigator.pop(context);
+                                              _pickImageFromGallery();
+                                            },
+                                            isDark: _isDarkTheme,
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: 16),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.analytics_outlined, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text(
+                          'Günlük Analizini Yap',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
+    );
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 120,
+          margin: EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.08)
+                    : Colors.white.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color:
+                  isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.05),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFE23F75), Color(0xFFE195B0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0xFFE23F75).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(icon, color: Colors.white, size: 28),
+              ),
+              SizedBox(height: 12),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color:
+                      isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -3260,7 +3741,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                     ),
                   ),
                 ),
-
                 // Main button
                 Container(
                   decoration: BoxDecoration(

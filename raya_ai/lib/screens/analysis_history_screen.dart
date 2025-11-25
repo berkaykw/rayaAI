@@ -17,7 +17,7 @@ class AnalysisHistoryScreen extends StatefulWidget {
 }
 
 class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
-  late Future<List<_LocalAnalysisEntry>> _entriesFuture;
+  late Future<List<LocalAnalysisEntry>> _entriesFuture;
 
   @override
   void initState() {
@@ -25,7 +25,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
     _entriesFuture = _loadEntries();
   }
 
-  Future<List<_LocalAnalysisEntry>> _loadEntries() async {
+  Future<List<LocalAnalysisEntry>> _loadEntries() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return [];
     final prefs = await SharedPreferences.getInstance();
@@ -35,11 +35,11 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
     return encodedList.reversed.map((encoded) {
       final Map<String, dynamic> map =
           jsonDecode(encoded) as Map<String, dynamic>;
-      return _LocalAnalysisEntry.fromJson(map);
+      return LocalAnalysisEntry.fromJson(map);
     }).toList();
   }
 
-  Future<void> _deleteEntry(_LocalAnalysisEntry entry) async {
+  Future<void> _deleteEntry(LocalAnalysisEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -140,7 +140,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
       child: Container(
         decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
-          child: FutureBuilder<List<_LocalAnalysisEntry>>(
+          child: FutureBuilder<List<LocalAnalysisEntry>>(
             future: _entriesFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -243,7 +243,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                                 MaterialPageRoute(
                                   builder:
                                       (context) =>
-                                          _AnalysisDetailPage(entry: entry),
+                                          AnalysisDetailPage(entry: entry),
                                 ),
                               );
                             },
@@ -262,7 +262,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
 }
 
 class _AnalysisTile extends StatelessWidget {
-  final _LocalAnalysisEntry entry;
+  final LocalAnalysisEntry entry;
   final VoidCallback onDelete;
   final VoidCallback onTap;
 
@@ -354,27 +354,30 @@ class _AnalysisTile extends StatelessWidget {
   }
 }
 
-class _LocalAnalysisEntry {
+class LocalAnalysisEntry {
   final String timestamp;
   final String? imagePath;
   final String? imageUrl;
-  final List<_LocalSection>? sections;
+  final List<LocalSection>? sections;
   final SkinAnalysisResult? analysis;
+  final String? type; // 'daily' or 'normal'
 
-  _LocalAnalysisEntry({
+  LocalAnalysisEntry({
     required this.timestamp,
     this.imagePath,
     this.imageUrl,
     this.sections,
     this.analysis,
+    this.type,
   });
 
-  factory _LocalAnalysisEntry.fromJson(Map<String, dynamic> json) {
+  factory LocalAnalysisEntry.fromJson(Map<String, dynamic> json) {
     if (json['analysis'] != null) {
-      return _LocalAnalysisEntry(
+      return LocalAnalysisEntry(
         timestamp: json['timestamp'] as String? ?? '',
         imagePath: json['imagePath'] as String?,
         imageUrl: json['imageUrl'] as String?,
+        type: json['type'] as String?,
         analysis: SkinAnalysisResult.fromJson(
           json['analysis'] as Map<String, dynamic>,
         ),
@@ -382,13 +385,13 @@ class _LocalAnalysisEntry {
     }
 
     final List sectionsJson = json['sections'] as List? ?? [];
-    return _LocalAnalysisEntry(
+    return LocalAnalysisEntry(
       timestamp: json['timestamp'] as String? ?? '',
       imagePath: json['imagePath'] as String?,
       imageUrl: json['imageUrl'] as String?,
       sections:
           sectionsJson
-              .map((e) => _LocalSection.fromJson(e as Map<String, dynamic>))
+              .map((e) => LocalSection.fromJson(e as Map<String, dynamic>))
               .toList(),
     );
   }
@@ -408,14 +411,14 @@ class _LocalAnalysisEntry {
   }
 }
 
-class _LocalSection {
+class LocalSection {
   final String title;
   final String content;
 
-  _LocalSection({required this.title, required this.content});
+  LocalSection({required this.title, required this.content});
 
-  factory _LocalSection.fromJson(Map<String, dynamic> json) {
-    return _LocalSection(
+  factory LocalSection.fromJson(Map<String, dynamic> json) {
+    return LocalSection(
       title: json['title'] as String? ?? '',
       content: json['content'] as String? ?? '',
     );
@@ -463,15 +466,15 @@ class _DeletePillButton extends StatelessWidget {
   }
 }
 
-class _AnalysisDetailPage extends StatefulWidget {
-  final _LocalAnalysisEntry entry;
-  const _AnalysisDetailPage({required this.entry});
+class AnalysisDetailPage extends StatefulWidget {
+  final LocalAnalysisEntry entry;
+  const AnalysisDetailPage({required this.entry});
 
   @override
-  State<_AnalysisDetailPage> createState() => _AnalysisDetailPageState();
+  State<AnalysisDetailPage> createState() => _AnalysisDetailPageState();
 }
 
-class _AnalysisDetailPageState extends State<_AnalysisDetailPage> {
+class _AnalysisDetailPageState extends State<AnalysisDetailPage> {
   // Genişletme state'leri
   bool _isSabahRutiniExpanded = false;
   bool _isAksamRutiniExpanded = false;

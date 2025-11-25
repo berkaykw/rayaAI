@@ -4,6 +4,7 @@ import 'package:raya_ai/screens/add_product.dart';
 import 'package:raya_ai/screens/analysis_screen.dart';
 import 'package:raya_ai/screens/loginpage_screen.dart';
 import 'package:raya_ai/screens/analysis_history_screen.dart';
+import 'package:raya_ai/screens/daily_tracking_screen.dart';
 import 'package:raya_ai/theme/app_theme.dart';
 import 'package:raya_ai/theme/theme_controller.dart';
 import 'package:raya_ai/widgets-tools/privacy_security_screen.dart';
@@ -18,10 +19,8 @@ import 'dart:ui';
 class ProfileScreen extends StatefulWidget {
   final int initialSelectedIndex;
 
-  const ProfileScreen({
-    Key? key,
-    this.initialSelectedIndex = -1,
-  }) : super(key: key);
+  const ProfileScreen({Key? key, this.initialSelectedIndex = -1})
+    : super(key: key);
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -46,42 +45,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _onItemTapped(int index) {
-  if (_selectedIndex == index) return; // aynı sayfaya tıklarsa yeniden yükleme
+    if (_selectedIndex == index)
+      return; // aynı sayfaya tıklarsa yeniden yükleme
 
-  setState(() {
-    _selectedIndex = index;
-  });
+    setState(() {
+      _selectedIndex = index;
+    });
 
-  Widget targetPage;
+    Widget targetPage;
 
-  switch (index) {
-    case 0:
-      targetPage = const ProductCompatibilityTest();
-      break;
-    case 1:
-      targetPage = const AnalysisScreen();
-      break;
-    case 2:
-      targetPage = const ProductAddScreen();
-      break;
-    default:
-      return;
+    switch (index) {
+      case 0:
+        targetPage = const ProductCompatibilityTest();
+        break;
+      case 1:
+        targetPage = const AnalysisScreen();
+        break;
+      case 2:
+        targetPage = const ProductAddScreen();
+        break;
+      default:
+        return;
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => targetPage,
+        transitionDuration: const Duration(milliseconds: 350),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
-
-  Navigator.pushReplacement(
-    context,
-    PageRouteBuilder(
-      pageBuilder: (_, __, ___) => targetPage,
-      transitionDuration: const Duration(milliseconds: 350),
-      transitionsBuilder: (_, animation, __, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-      },
-    ),
-  );
-}
 
   Future<void> _loadUserData() async {
     try {
@@ -90,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // Profil fotoğrafını yükle
         final prefs = await SharedPreferences.getInstance();
         final imagePath = prefs.getString('profile_image_path_${user.id}');
-        
+
         setState(() {
           userEmail = user.email;
           userName = user.userMetadata?['user_name'] ?? 'User';
@@ -109,27 +106,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _signOut() async {
-  try {
-    // 1️⃣ Supabase oturumunu kapat
-    await supabase.auth.signOut();
+    try {
+      // 1️⃣ Supabase oturumunu kapat
+      await supabase.auth.signOut();
 
-    // 2️⃣ Remember Me bilgisini temizle
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('rememberMe');
+      // 2️⃣ Remember Me bilgisini temizle
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('rememberMe');
 
-    // 3️⃣ Login ekranına yönlendir
-  if (mounted) {
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (context) => const LoginpageScreen()),
-    (route) => false, // tüm önceki sayfaları kaldır
-  );
-}
-  } catch (e) {
-    _showError('Çıkış yapılamadı: $e');
+      // 3️⃣ Login ekranına yönlendir
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginpageScreen()),
+          (route) => false, // tüm önceki sayfaları kaldır
+        );
+      }
+    } catch (e) {
+      _showError('Çıkış yapılamadı: $e');
+    }
   }
-}
-
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -175,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (user != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('profile_image_path_${user.id}', image.path);
-          
+
           setState(() {
             _profileImage = File(image.path);
           });
@@ -193,136 +189,138 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color dialogColor =
         isDark ? const Color(0xFF2A2A2A) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.15)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark
+            ? Colors.white.withOpacity(0.15)
+            : Colors.black.withOpacity(0.05);
     final Color inputFill =
         isDark ? Colors.black54 : Colors.black.withOpacity(0.05);
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: dialogColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "İsmini Değiştir",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: nameController,
-                style: TextStyle(
-                  color: theme.textTheme.bodyLarge?.color,
-                  fontSize: 16,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Yeni isim girin",
-                  filled: true,
-                  fillColor: inputFill,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(
-                      "İptal",
-                      style: TextStyle(
-                        color: theme.colorScheme.error,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: () async {
-                      final newName = nameController.text.trim();
-                      final user = supabase.auth.currentUser;
-                      if (newName.length > 16) {
-                        _showError("İsim en fazla 16 karakter olabilir.");
-                        return;
-                      }
-                      if (newName.isNotEmpty && user != null) {
-                        try {
-                          await supabase.auth.updateUser(
-                            UserAttributes(
-                              data: {'user_name': newName},
-                            ),
-                          );
-
-                          await supabase
-                              .from('user_skin_profiles')
-                              .update({'user_name': newName})
-                              .eq('id', user.id);
-
-                          if (mounted) {
-                            setState(() {
-                              userName = newName;
-                            });
-                            Navigator.of(context).pop();
-                            _showSuccess('İsim başarıyla güncellendi');
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            Navigator.of(context).pop();
-                            _showError('İsim güncellenemedi: $e');
-                          }
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 12,
-                      ),
-                    ),
-                    child: const Text(
-                      "Kaydet",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: dialogColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "İsmini Değiştir",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameController,
+                    style: TextStyle(
+                      color: theme.textTheme.bodyLarge?.color,
+                      fontSize: 16,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: "Yeni isim girin",
+                      filled: true,
+                      fillColor: inputFill,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 16,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(
+                          "İptal",
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final newName = nameController.text.trim();
+                          final user = supabase.auth.currentUser;
+                          if (newName.length > 16) {
+                            _showError("İsim en fazla 16 karakter olabilir.");
+                            return;
+                          }
+                          if (newName.isNotEmpty && user != null) {
+                            try {
+                              await supabase.auth.updateUser(
+                                UserAttributes(data: {'user_name': newName}),
+                              );
+
+                              await supabase
+                                  .from('user_skin_profiles')
+                                  .update({'user_name': newName})
+                                  .eq('id', user.id);
+
+                              if (mounted) {
+                                setState(() {
+                                  userName = newName;
+                                });
+                                Navigator.of(context).pop();
+                                _showSuccess('İsim başarıyla güncellendi');
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                Navigator.of(context).pop();
+                                _showError('İsim güncellenemedi: $e');
+                              }
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        child: const Text(
+                          "Kaydet",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -355,184 +353,208 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Profil Fotoğrafı Seç',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    SizedBox(height: 28),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        // Kamera
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              _pickImage(ImageSource.camera);
-                            },
-                            borderRadius: BorderRadius.circular(18),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                                  margin: EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: Colors.pink.withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white.withOpacity(0.15),
-                                        ),
-                                        child: Icon(
-                                          Icons.camera_alt_rounded,
-                                          color: Colors.white,
-                                          size: 32,
-                                        ),
-                                      ),
-                                      SizedBox(height: 12),
-                                      Text(
-                                        'Kamera',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        // Galeri
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).pop();
-                              _pickImage(ImageSource.gallery);
-                            },
-                            borderRadius: BorderRadius.circular(18),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(18),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                                  margin: EdgeInsets.only(left: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(
-                                      color: Colors.pink.withOpacity(0.5),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: Colors.white.withOpacity(0.15),
-                                        ),
-                                        child: Icon(
-                                          Icons.photo_library_rounded,
-                                          color: Colors.white,
-                                          size: 32,
-                                        ),
-                                      ),
-                                      SizedBox(height: 12),
-                                      Text(
-                                        'Galeri',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.3,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 24),
-                    if (_profileImage != null)
-                      Container(
-                        margin: EdgeInsets.only(bottom: 12),
-                        child: TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _profileImage = null;
-                            });
-                            final user = supabase.auth.currentUser;
-                            if (user != null) {
-                              SharedPreferences.getInstance().then((prefs) {
-                                prefs.remove('profile_image_path_${user.id}');
-                              });
-                            }
-                            Navigator.of(context).pop();
-                            _showSuccess('Profil fotoğrafı kaldırıldı');
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: Text(
-                            'Fotoğrafı Kaldır',
-                            style: TextStyle(
-                              color: Colors.redAccent[200],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                      ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'İptal',
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Profil Fotoğrafı Seç',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontWeight: FontWeight.w500,
-                          fontSize: 15,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 28),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Kamera
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                _pickImage(ImageSource.camera);
+                              },
+                              borderRadius: BorderRadius.circular(18),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10,
+                                    sigmaY: 10,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 24,
+                                      horizontal: 16,
+                                    ),
+                                    margin: EdgeInsets.only(right: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: Colors.pink.withOpacity(0.5),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white.withOpacity(
+                                              0.15,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.camera_alt_rounded,
+                                            color: Colors.white,
+                                            size: 32,
+                                          ),
+                                        ),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Kamera',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Galeri
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                _pickImage(ImageSource.gallery);
+                              },
+                              borderRadius: BorderRadius.circular(18),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 10,
+                                    sigmaY: 10,
+                                  ),
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 24,
+                                      horizontal: 16,
+                                    ),
+                                    margin: EdgeInsets.only(left: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(18),
+                                      border: Border.all(
+                                        color: Colors.pink.withOpacity(0.5),
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.white.withOpacity(
+                                              0.15,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.photo_library_rounded,
+                                            color: Colors.white,
+                                            size: 32,
+                                          ),
+                                        ),
+                                        SizedBox(height: 12),
+                                        Text(
+                                          'Galeri',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 24),
+                      if (_profileImage != null)
+                        Container(
+                          margin: EdgeInsets.only(bottom: 12),
+                          child: TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _profileImage = null;
+                              });
+                              final user = supabase.auth.currentUser;
+                              if (user != null) {
+                                SharedPreferences.getInstance().then((prefs) {
+                                  prefs.remove('profile_image_path_${user.id}');
+                                });
+                              }
+                              Navigator.of(context).pop();
+                              _showSuccess('Profil fotoğrafı kaldırıldı');
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Fotoğrafı Kaldır',
+                              style: TextStyle(
+                                color: Colors.redAccent[200],
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'İptal',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -548,83 +570,94 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color primary = theme.colorScheme.primary;
     final Color onSurface = theme.colorScheme.onSurface;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
     final themeController = ThemeControllerProvider.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient,
-        ),
-        child: isLoading
-            ? Center(
-                child: CircularProgressIndicator(color: primary),
-              )
-            : Stack(
-                children: [
-                  SafeArea(
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 20,
-                        ),
-                        child: Column(
-                          children: [
-                            Align(
-                              alignment: Alignment.topLeft,
-                              child: IconButton(
-                                icon: Icon(
-                                  Icons.arrow_back_ios_new_rounded,
-                                  color: onSurface.withOpacity(0.7),
-                                  size: 22,
+        decoration: BoxDecoration(gradient: backgroundGradient),
+        child:
+            isLoading
+                ? Center(child: CircularProgressIndicator(color: primary))
+                : Stack(
+                  children: [
+                    SafeArea(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 20,
+                          ),
+                          child: Column(
+                            children: [
+                              Align(
+                                alignment: Alignment.topLeft,
+                                child: IconButton(
+                                  icon: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
+                                    color: onSurface.withOpacity(0.7),
+                                    size: 22,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => const AnalysisScreen(),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                onPressed: () {
-                                  Navigator.pushReplacement(
+                              ),
+                              _buildProfileHeader(),
+
+                              const SizedBox(height: 40),
+
+                              _buildProfileOption(
+                                icon: Icons.person_outline,
+                                title: "Ad Değiştir",
+                                onTap: _showRenameDialog,
+                              ),
+                              SizedBox(height: 12),
+                              _buildProfileOption(
+                                icon: Icons.spa_outlined, // Güzel bir ikon
+                                title: 'Cilt Profilim',
+                                onTap: () {
+                                  // Birazdan oluşturacağımız yeni sayfaya yönlendir
+                                  Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const AnalysisScreen(),
+                                      builder:
+                                          (context) =>
+                                              SkinProfileDetailsScreen(),
                                     ),
                                   );
                                 },
                               ),
-                            ),
-                            _buildProfileHeader(),
-
-                            const SizedBox(height: 40),
-
-                            _buildProfileOption(
-                              icon: Icons.person_outline,
-                              title: "Ad Değiştir",
-                              onTap: _showRenameDialog,
-                            ),
-                    
-                    
                               SizedBox(height: 12),
                               _buildProfileOption(
-                            icon: Icons.spa_outlined, // Güzel bir ikon
-                            title: 'Cilt Profilim',
-                            onTap: () {
-                              // Birazdan oluşturacağımız yeni sayfaya yönlendir
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SkinProfileDetailsScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          SizedBox(height: 12),
+                                icon: Icons.calendar_month_outlined,
+                                title: 'Günlük Takip',
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              const DailyTrackingScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              SizedBox(height: 12),
                               _buildProfileOption(
                                 icon: Icons.history,
                                 title: 'Geçmiş Analizler',
@@ -632,13 +665,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const AnalysisHistoryScreen(),
+                                      builder:
+                                          (context) =>
+                                              const AnalysisHistoryScreen(),
                                     ),
                                   );
                                 },
                               ),
                               SizedBox(height: 12),
-                    
+                              _buildThemeSection(
+                                themeController: themeController,
+                                theme: theme,
+                                isDark: isDark,
+                              ),
+                              SizedBox(height: 12),
+
                               _buildProfileOption(
                                 icon: Icons.lock_outline,
                                 title: 'Gizlilik & Güvenlik',
@@ -646,54 +687,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => PrivacyAndSecurityScreen(),
+                                      builder:
+                                          (context) =>
+                                              PrivacyAndSecurityScreen(),
                                     ),
                                   );
                                 },
                               ),
-                    
+
                               SizedBox(height: 12),
-                    
-                            _buildProfileOption(
-                              icon: Icons.help_outline,
-                              title: 'Yardım & Destek',
-                              onTap: () {},
-                            ),
 
-                            const SizedBox(height: 12),
+                              _buildProfileOption(
+                                icon: Icons.help_outline,
+                                title: 'Yardım & Destek',
+                                onTap: () {},
+                              ),
 
-                            _buildThemeSection(
-                              themeController: themeController,
-                              theme: theme,
-                              isDark: isDark,
-                            ),
+                              const SizedBox(height: 30),
 
-                            const SizedBox(height: 30),
+                              _buildActionButton(
+                                text: 'Çıkış Yap',
+                                color: Colors.red[600]!,
+                                onPressed: _signOut,
+                                textColor: Colors.white,
+                              ),
 
-                            _buildActionButton(
-                              text: 'Çıkış Yap',
-                              color: Colors.red[600]!,
-                              onPressed: _signOut,
-                              textColor: Colors.white,
-                            ),
-
-                            const SizedBox(height: 112),
-                          ],
+                              const SizedBox(height: 112),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: GlassBottomNavBar(
-                      selectedIndex: _selectedIndex,
-                      onItemTapped: _onItemTapped,
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: GlassBottomNavBar(
+                        selectedIndex: _selectedIndex,
+                        onItemTapped: _onItemTapped,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
       ),
     );
   }
@@ -703,9 +738,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
 
     return Container(
       padding: EdgeInsets.all(24),
@@ -734,22 +768,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   height: 100,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: _profileImage == null
-                        ? LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.pink,
-                              Colors.pinkAccent,
-                              Colors.pink,
-                            ],
-                          )
-                        : null,
+                    gradient:
+                        _profileImage == null
+                            ? LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Colors.pink,
+                                Colors.pinkAccent,
+                                Colors.pink,
+                              ],
+                            )
+                            : null,
                     color: _profileImage != null ? Colors.transparent : null,
                     border: Border.all(
-                      color: _profileImage != null
-                          ? Colors.white.withOpacity(0.4)
-                          : Colors.white.withOpacity(0.3),
+                      color:
+                          _profileImage != null
+                              ? Colors.white.withOpacity(0.4)
+                              : Colors.white.withOpacity(0.3),
                       width: 3.5,
                     ),
                     boxShadow: [
@@ -767,34 +803,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ],
                   ),
-                  child: _profileImage != null
-                      ? ClipOval(
-                          child: Image.file(
-                            _profileImage!,
-                            fit: BoxFit.cover,
-                            width: 100,
-                            height: 100,
-                          ),
-                        )
-                      : Center(
-                          child: Text(
-                            userName != null && userName!.isNotEmpty
-                                ? userName![0].toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                  child:
+                      _profileImage != null
+                          ? ClipOval(
+                            child: Image.file(
+                              _profileImage!,
+                              fit: BoxFit.cover,
+                              width: 100,
+                              height: 100,
+                            ),
+                          )
+                          : Center(
+                            child: Text(
+                              userName != null && userName!.isNotEmpty
+                                  ? userName![0].toUpperCase()
+                                  : 'U',
+                              style: TextStyle(
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -805,15 +842,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: LinearGradient(
-                        colors: [
-                          Color(0xFFFF8E9B),
-                          Colors.pink,
-                        ],
+                        colors: [Color(0xFFFF8E9B), Colors.pink],
                       ),
-                      border: Border.all(
-                        color: Color(0xFF2A2A2A),
-                        width: 3.5,
-                      ),
+                      border: Border.all(color: Color(0xFF2A2A2A), width: 3.5),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.pink.withOpacity(0.4),
@@ -870,11 +901,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
-    final Color iconColor =
-        theme.iconTheme.color ?? theme.colorScheme.primary;
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
+    final Color iconColor = theme.iconTheme.color ?? theme.colorScheme.primary;
     final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;
 
     return Container(
@@ -948,25 +977,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Text(
           text,
-          style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
   }
- 
+
   Widget _buildThemeSection({
     required ThemeController themeController,
     required ThemeData theme,
     required bool isDark,
   }) {
     final ThemeMode currentMode = themeController.themeMode;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color textColor = theme.textTheme.titleMedium?.color ??
-        theme.colorScheme.onSurface;
 
     return Container(
       width: double.infinity,
@@ -991,7 +1021,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Tema',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: textColor,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 8),
@@ -1046,45 +1076,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [
-                    primary.withOpacity(0.2),
-                    primary.withOpacity(0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isSelected
-              ? null
-              : (isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : theme.colorScheme.surface),
+          gradient:
+              isSelected
+                  ? LinearGradient(
+                    colors: [
+                      primary.withOpacity(0.2),
+                      primary.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                  : null,
+          color:
+              isSelected
+                  ? null
+                  : (isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : theme.colorScheme.surface),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected
-                ? primary
-                : (isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05)),
+            color:
+                isSelected
+                    ? primary
+                    : (isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.black.withOpacity(0.05)),
             width: 1.5,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? primary : theme.iconTheme.color,
-            ),
+            Icon(icon, color: isSelected ? primary : theme.iconTheme.color),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected
-                    ? primary
-                    : theme.textTheme.bodyLarge?.color,
+                color: isSelected ? primary : theme.textTheme.bodyLarge?.color,
                 fontWeight: FontWeight.w600,
               ),
             ),
