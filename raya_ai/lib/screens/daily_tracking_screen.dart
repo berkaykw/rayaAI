@@ -157,6 +157,7 @@ class _DailyTrackingScreenState extends State<DailyTrackingScreen> {
   }
 
   Widget _buildHeader(ThemeData theme) {
+    final bool isDark = theme.brightness == Brightness.dark;
     return Row(
       children: [
         IconButton(
@@ -178,6 +179,7 @@ class _DailyTrackingScreenState extends State<DailyTrackingScreen> {
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
             fontSize: 24,
+            color: isDark ? Colors.white : Colors.black,
           ),
         ),
       ],
@@ -215,13 +217,14 @@ class _DailyTrackingScreenState extends State<DailyTrackingScreen> {
             'Cilt Sağlığı Skoru',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             'Son analizlerinize göre değişim',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           const SizedBox(height: 24),
@@ -235,7 +238,10 @@ class _DailyTrackingScreenState extends State<DailyTrackingScreen> {
                   horizontalInterval: 20,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
-                      color: theme.colorScheme.onSurface.withOpacity(0.1),
+                      color:
+                          isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : Colors.black.withOpacity(0.1),
                       strokeWidth: 1,
                     );
                   },

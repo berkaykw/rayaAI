@@ -47,26 +47,26 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
   }
 
   Future<void> _signOut() async {
-  try {
-    // 1️⃣ Supabase oturumunu kapat
-    await supabase.auth.signOut();
+    try {
+      // 1️⃣ Supabase oturumunu kapat
+      await supabase.auth.signOut();
 
-    // 2️⃣ Remember Me bilgisini temizle
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('rememberMe');
+      // 2️⃣ Remember Me bilgisini temizle
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('rememberMe');
 
-    // 3️⃣ Login ekranına yönlendir
-  if (mounted) {
-  Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (context) => LoginpageScreen()),
-    (route) => false, // tüm önceki sayfaları kaldır
-  );
-}
-  } catch (e) {
-    _showError('Çıkış yapılamadı: $e');
+      // 3️⃣ Login ekranına yönlendir
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => LoginpageScreen()),
+          (route) => false, // tüm önceki sayfaları kaldır
+        );
+      }
+    } catch (e) {
+      _showError('Çıkış yapılamadı: $e');
+    }
   }
-}
 
   Future<void> _deleteAccount() async {
     final theme = Theme.of(context);
@@ -102,7 +102,10 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: Text('Sil', style: TextStyle(color: theme.colorScheme.error)),
+                child: Text(
+                  'Sil',
+                  style: TextStyle(color: theme.colorScheme.error),
+                ),
               ),
             ],
           ),
@@ -124,16 +127,14 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final Color onSurface = theme.colorScheme.onSurface;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -144,12 +145,17 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
             children: [
               // Özel AppBar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 22),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 22,
+                      ),
                       color: onSurface.withOpacity(0.7),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -160,6 +166,7 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                     ),
@@ -195,35 +202,37 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
                       _buildProfileOption(
                         icon: Icons.description_outlined,
                         title: "Kullanım Koşulları",
-                        onTap: () {
-                        },
+                        onTap: () {},
                       ),
                       const SizedBox(height: 12),
                       // Gizlilik Politikası
                       _buildProfileOption(
                         icon: Icons.shield_outlined,
                         title: "Gizlilik Politikası",
-                        onTap: () {
-                        },
+                        onTap: () {},
                       ),
                       const SizedBox(height: 50),
                       Container(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                                onPressed: _deleteAccount,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red[600],
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(27.5),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: Text(
-                                  'Hesabı Sil',
-                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                              ),
+                          onPressed: _deleteAccount,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red[600],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(27.5),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            'Hesabı Sil',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
                       SizedBox(height: 20),
                     ],
@@ -264,9 +273,8 @@ class _PrivacyAndSecurityScreenState extends State<PrivacyAndSecurityScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
     final Color iconColor =
         theme.iconTheme.color?.withOpacity(0.85) ?? theme.colorScheme.primary;
     final Color textColor = theme.textTheme.bodyLarge?.color ?? Colors.black87;

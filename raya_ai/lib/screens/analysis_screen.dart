@@ -114,12 +114,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
       if (!mounted) return;
       setState(() {
         // TEST İÇİN PREMIUM YAPILDI
-        userTier = 'free'; // response?['tier'] ?? 'free';
+        userTier = 'premium'; // response?['tier'] ?? 'free';
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        userTier = 'free'; // 'free';
+        userTier = 'premium'; // 'free';
       });
     }
   }
@@ -3449,36 +3449,62 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                   ),
                   SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      'Günlük analizinizi tamamladınız.',
-                      style: TextStyle(
-                        color:
-                            _isDarkTheme
-                                ? Colors.greenAccent
-                                : Colors.green[700],
-                        fontWeight: FontWeight.w600,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Günlük analizinizi tamamladınız.',
+                          style: TextStyle(
+                            color:
+                                _isDarkTheme
+                                    ? Colors.greenAccent
+                                    : Colors.green[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'İsterseniz anlık analiz yapabilirsiniz',
+                          style: TextStyle(
+                            color:
+                                _isDarkTheme
+                                    ? Colors.greenAccent.withOpacity(0.8)
+                                    : Colors.green[700]!,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 16),
           ],
           if (!_hasDailyAnalysis)
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFE23F75), Color(0xFFE195B0)],
+                  colors: [Color(0xFF1E1E2E), Color(0xFF2A2A3E)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: Color(0xFF8B5CF6).withOpacity(0.5),
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0xFFE23F75).withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: Offset(0, 6),
+                    color: Color(0xFF8B5CF6).withOpacity(0.15),
+                    blurRadius: 32,
+                    spreadRadius: 4,
+                    offset: Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 16,
+                    offset: Offset(0, 8),
                   ),
                 ],
               ),
@@ -3672,13 +3698,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
-                    colors: [Color(0xFFE23F75), Color(0xFFE195B0)],
+                    colors: [Colors.pink, Colors.pinkAccent],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFFE23F75).withOpacity(0.3),
+                      color: Colors.pink.withOpacity(0.3),
                       blurRadius: 8,
                       offset: Offset(0, 4),
                     ),

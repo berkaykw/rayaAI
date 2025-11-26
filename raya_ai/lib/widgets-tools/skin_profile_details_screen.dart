@@ -32,11 +32,12 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
     }
 
     try {
-      final data = await supabase
-          .from('user_skin_profiles')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
+      final data =
+          await supabase
+              .from('user_skin_profiles')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
 
       return data;
     } catch (e) {
@@ -50,15 +51,17 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) =>
-          const Center(child: CircularProgressIndicator(color: Colors.pink)),
+      builder:
+          (context) => const Center(
+            child: CircularProgressIndicator(color: Colors.pink),
+          ),
     );
 
     Map<String, dynamic>? currentData;
     try {
       // 2. Mevcut veriyi veritabanından çek
       currentData = await _fetchProfileData();
-      
+
       if (mounted) {
         Navigator.pop(context); // Yüklenme animasyonunu kapat
       }
@@ -87,9 +90,10 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
     final bool? didSaveChanges = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => SkinOnboardingScreen(
-          existingData: currentData, // <-- VERİYİ BURADA YOLLA
-        ),
+        builder:
+            (context) => SkinOnboardingScreen(
+              existingData: currentData, // <-- VERİYİ BURADA YOLLA
+            ),
       ),
     );
 
@@ -107,23 +111,19 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: backgroundGradient,
-        ),
+        decoration: BoxDecoration(gradient: backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -136,15 +136,17 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                          child: CircularProgressIndicator(color: Colors.pink));
+                        child: CircularProgressIndicator(color: Colors.pink),
+                      );
                     }
 
                     if (snapshot.hasError) {
                       return Center(
-                          child: Text(
-                        "Hata: ${snapshot.error}",
-                        style: const TextStyle(color: Colors.red),
-                      ));
+                        child: Text(
+                          "Hata: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      );
                     }
 
                     final profileData = snapshot.data;
@@ -167,6 +169,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
 
   /// AppBar yerine özel üst kısım
   Widget _buildCustomAppBar(ThemeData theme) {
+    final bool isDark = theme.brightness == Brightness.dark;
     final Color onSurface = theme.colorScheme.onSurface;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -175,10 +178,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
         children: [
           // Geri Butonu
           IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 22,
-            ),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 22),
             color: onSurface.withOpacity(0.7),
             onPressed: () => Navigator.of(context).pop(),
           ),
@@ -188,6 +188,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
             style: theme.textTheme.titleMedium?.copyWith(
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
           // Düzenle Butonu
@@ -206,15 +207,18 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
     final Color onSurface = theme.colorScheme.onSurface;
     final Color secondary =
         theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
-            onSurface.withOpacity(0.7);
+        onSurface.withOpacity(0.7);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.warning_amber_rounded,
-                color: theme.colorScheme.tertiary, size: 60),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: theme.colorScheme.tertiary,
+              size: 60,
+            ),
             const SizedBox(height: 16),
             Text(
               "Cilt profili veriniz bulunamadı.",
@@ -240,8 +244,7 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
   }
 
   /// Verileri gruplanmış kartlar olarak gösteren Widget
-  Widget _buildProfileDetailsCards(
-      Map<String, dynamic> data, ThemeData theme) {
+  Widget _buildProfileDetailsCards(Map<String, dynamic> data, ThemeData theme) {
     // List<dynamic> olanları List<String>'e çevir ve birleştir
     String formatList(List? list) {
       if (list == null || list.isEmpty) return "Yok";
@@ -257,49 +260,41 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
       padding: const EdgeInsets.all(20.0),
       child: Column(
         children: [
-          _buildInfoCard(
-            "Temel Bilgiler",
-            [
-              MapEntry("Cilt Tipi", data['skin_type'] as String?),
-              MapEntry("Yaş Aralığı", data['age_range'] as String?),
-              MapEntry("Cinsiyet", data['gender'] as String?),
-            ],
-            theme,
-          ),
-          _buildInfoCard(
-            "Cilt Detayları",
-            [
-              MapEntry("Cilt Sorunları", skinProblems),
-              MapEntry("Alerjiler", allergies),
-              MapEntry("Rutin Adımları", routineSteps),
-            ],
-            theme,
-          ),
-          _buildInfoCard(
-            "Yaşam Tarzı",
-            [
-              MapEntry("Yıkama Sıklığı", data['wash_frequency'] as String?),
-              MapEntry("Güneş Kremi", data['sunscreen_frequency'] as String?),
-              MapEntry("Sigara Durumu", data['smoking_status'] as String?),
-              MapEntry("Uyku Düzeni", data['sleep_pattern'] as String?),
-              MapEntry("Stres Seviyesi", data['stress_level'] as String?),
-            ],
-            theme,
-          ),
+          _buildInfoCard("Temel Bilgiler", [
+            MapEntry("Cilt Tipi", data['skin_type'] as String?),
+            MapEntry("Yaş Aralığı", data['age_range'] as String?),
+            MapEntry("Cinsiyet", data['gender'] as String?),
+          ], theme),
+          _buildInfoCard("Cilt Detayları", [
+            MapEntry("Cilt Sorunları", skinProblems),
+            MapEntry("Alerjiler", allergies),
+            MapEntry("Rutin Adımları", routineSteps),
+          ], theme),
+          _buildInfoCard("Yaşam Tarzı", [
+            MapEntry("Yıkama Sıklığı", data['wash_frequency'] as String?),
+            MapEntry("Güneş Kremi", data['sunscreen_frequency'] as String?),
+            MapEntry("Sigara Durumu", data['smoking_status'] as String?),
+            MapEntry("Uyku Düzeni", data['sleep_pattern'] as String?),
+            MapEntry("Stres Seviyesi", data['stress_level'] as String?),
+          ], theme),
         ],
       ),
     );
   }
 
   /// ProfileScreen'deki gibi bir bilgi kartı Widget'ı
-  Widget _buildInfoCard(String title, List<MapEntry<String, String?>> items,
-      ThemeData theme) {
+  Widget _buildInfoCard(
+    String title,
+    List<MapEntry<String, String?>> items,
+    ThemeData theme,
+  ) {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.05) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.08)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark
+            ? Colors.white.withOpacity(0.08)
+            : Colors.black.withOpacity(0.05);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -338,7 +333,8 @@ class _SkinProfileDetailsScreenState extends State<SkinProfileDetailsScreen> {
           ),
           // Bilgi satırlarını oluştur
           ListView.separated(
-            physics: const NeverScrollableScrollPhysics(), // İç içe scroll'u engelle
+            physics:
+                const NeverScrollableScrollPhysics(), // İç içe scroll'u engelle
             shrinkWrap: true,
             itemCount: items.length,
             itemBuilder: (context, index) {

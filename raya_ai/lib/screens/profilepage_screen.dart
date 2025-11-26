@@ -224,6 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -256,7 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           "İptal",
                           style: TextStyle(
-                            color: theme.colorScheme.error,
+                            color: isDark ? Colors.white : Colors.black,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -873,6 +874,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontWeight: FontWeight.w600,
               letterSpacing: -0.3,
               height: 1.2,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
 

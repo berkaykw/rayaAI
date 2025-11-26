@@ -184,6 +184,7 @@ class _AnalysisHistoryScreenState extends State<AnalysisHistoryScreen> {
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -523,6 +524,7 @@ class _AnalysisDetailPageState extends State<AnalysisDetailPage> {
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                     ],

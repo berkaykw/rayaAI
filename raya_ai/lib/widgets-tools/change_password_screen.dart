@@ -29,7 +29,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
- Future<void> _changePassword() async {
+  Future<void> _changePassword() async {
     // 1. Formun geçerli olup olmadığını kontrol et
     if (!_formKey.currentState!.validate()) {
       return;
@@ -58,23 +58,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       // 4. ADIM: Doğrulama başarılıysa, şifreyi GÜNCELLE
       // (signInWithPassword başarılı olduysa buraya geçer)
-      await _supabase.auth.updateUser(
-        UserAttributes(password: newPassword),
-      );
+      await _supabase.auth.updateUser(UserAttributes(password: newPassword));
 
       // 5. BAŞARI
       if (mounted) {
         _showSuccess('Şifreniz başarıyla güncellendi.');
         Navigator.pop(context); // Bir önceki (Gizlilik) sayfasına dön
       }
-
     } on AuthException catch (e) {
       if (mounted) {
         // Hata mesajı "Invalid login credentials" ise
         // (signInWithPassword bu hatayı verir)
-        final message = (e.message.contains("Invalid login credentials"))
-            ? 'Mevcut şifreniz hatalı.'
-            : e.message;
+        final message =
+            (e.message.contains("Invalid login credentials"))
+                ? 'Mevcut şifreniz hatalı.'
+                : e.message;
         _showError('Hata: $message');
       }
     } catch (e) {
@@ -94,16 +92,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color primary = theme.colorScheme.primary;
     final Color onSurface = theme.colorScheme.onSurface;
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -114,13 +110,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             children: [
               // Özel AppBar
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                          size: 22),
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        size: 22,
+                      ),
                       color: onSurface.withOpacity(0.7),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
@@ -131,6 +131,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
                     ),
@@ -154,11 +155,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _currentPasswordController,
                           label: 'Mevcut Şifre',
                           obscureText: _obscureCurrent,
-                          onToggleObscure: () =>
-                              setState(() => _obscureCurrent = !_obscureCurrent),
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Lütfen mevcut şifrenizi girin'
-                              : null,
+                          onToggleObscure:
+                              () => setState(
+                                () => _obscureCurrent = !_obscureCurrent,
+                              ),
+                          validator:
+                              (val) =>
+                                  val == null || val.isEmpty
+                                      ? 'Lütfen mevcut şifrenizi girin'
+                                      : null,
                         ),
                         const SizedBox(height: 20),
                         // Yeni Şifre
@@ -166,8 +171,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _newPasswordController,
                           label: 'Yeni Şifre',
                           obscureText: _obscureNew,
-                          onToggleObscure: () =>
-                              setState(() => _obscureNew = !_obscureNew),
+                          onToggleObscure:
+                              () => setState(() => _obscureNew = !_obscureNew),
                           validator: (val) {
                             if (val == null || val.isEmpty) {
                               return 'Lütfen yeni bir şifre girin';
@@ -184,8 +189,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _confirmPasswordController,
                           label: 'Yeni Şifre (Tekrar)',
                           obscureText: _obscureConfirm,
-                          onToggleObscure: () =>
-                              setState(() => _obscureConfirm = !_obscureConfirm),
+                          onToggleObscure:
+                              () => setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
                           validator: (val) {
                             if (val == null || val.isEmpty) {
                               return 'Lütfen yeni şifrenizi doğrulayın';
@@ -206,29 +213,30 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: primary,
                               foregroundColor: theme.colorScheme.onPrimary,
-                              disabledBackgroundColor:
-                                  primary.withOpacity(0.5),
+                              disabledBackgroundColor: primary.withOpacity(0.5),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(27.5),
                               ),
                               elevation: 0,
                             ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 3,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Şifreyi Güncelle',
-                                    style: TextStyle(
+                            child:
+                                _isLoading
+                                    ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 3,
+                                      ),
+                                    )
+                                    : const Text(
+                                      'Şifreyi Güncelle',
+                                      style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white),
-                                  ),
+                                        color: Colors.white,
+                                      ),
+                                    ),
                           ),
                         ),
                       ],
@@ -254,10 +262,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
     final Color fillColor =
-        isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.04);
+        isDark
+            ? Colors.white.withOpacity(0.08)
+            : Colors.black.withOpacity(0.04);
     final Color labelColor =
-        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
-            Colors.grey;
+        theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ?? Colors.grey;
     final Color iconColor =
         theme.iconTheme.color?.withOpacity(0.7) ?? Colors.grey;
 
@@ -276,9 +285,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: theme.dividerColor.withOpacity(0.4),
-          ),
+          borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.4)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -286,13 +293,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         suffixIcon: IconButton(
           icon: Icon(
-            obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+            obscureText
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
             color: iconColor,
           ),
           onPressed: onToggleObscure,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 16,
+          horizontal: 16,
+        ),
       ),
       validator: validator,
     );
