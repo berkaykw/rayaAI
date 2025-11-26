@@ -38,11 +38,37 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   // ✅ Auth state değişikliklerini dinle
   void _setupAuthListener() {
     supabase.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
       final session = data.session;
+
       if (session != null && mounted) {
-        _handleAuthNavigation();
+        // Sadece yeni giriş yapıldığında yönlendir
+        if (event == AuthChangeEvent.signedIn) {
+          _handleAuthNavigation();
+        }
       }
     });
+  }
+
+  Future<void> _checkRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedRemember = prefs.getBool('rememberMe') ?? false;
+
+    setState(() {
+      rememberMe = savedRemember;
+    });
+
+    final session = supabase.auth.currentSession;
+    if (session != null) {
+      if (savedRemember) {
+        if (mounted) {
+          await _handleAuthNavigation();
+        }
+      } else {
+        // Beni hatırla kapalıysa ve oturum varsa, oturumu kapat
+        await supabase.auth.signOut();
+      }
+    }
   }
 
   @override
@@ -57,7 +83,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   // ✅ Google ile giriş fonksiyonu
   Future<void> signInWithGoogle() async {
     setState(() => isLoading = true);
-    
+
     try {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
@@ -77,7 +103,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   // ✅ Apple ile giriş fonksiyonu
   Future<void> signInWithApple() async {
     setState(() => isLoading = true);
-    
+
     try {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.apple,
@@ -100,7 +126,8 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     if (user == null || !mounted) return;
 
     final metadata = user.userMetadata;
-    final bool hasCompletedOnboarding = metadata?['has_completed_onboarding'] ?? false;
+    final bool hasCompletedOnboarding =
+        metadata?['has_completed_onboarding'] ?? false;
 
     if (hasCompletedOnboarding) {
       Navigator.pushReplacement(
@@ -137,10 +164,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
       await supabase.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'user_name': name,
-          'has_completed_onboarding': false,
-        },
+        data: {'user_name': name, 'has_completed_onboarding': false},
       );
 
       if (mounted) {
@@ -199,18 +223,6 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     await _handleAuthNavigation();
   }
 
-  Future<void> _checkRememberMe() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedRemember = prefs.getBool('rememberMe') ?? false;
-
-    if (savedRemember) {
-      final session = supabase.auth.currentSession;
-      if (session != null && mounted) {
-        await _handleAuthNavigation();
-      }
-    }
-  }
-
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -238,7 +250,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
         content: Center(
           child: Text(
             message,
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
         backgroundColor: Colors.red,
@@ -256,10 +268,10 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
         content: Center(
           child: Text(
             message,
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
         ),
-        backgroundColor: Colors.greenAccent[400],
+        backgroundColor: Colors.greenAccent[400]!.withOpacity(0.8),
         duration: Duration(seconds: 3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         margin: EdgeInsets.only(bottom: 25, left: 10, right: 10),
@@ -272,22 +284,19 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final bool isDark = theme.brightness == Brightness.dark;
-    final ThemeController themeController =
-        ThemeControllerProvider.of(context);
-    final LinearGradient backgroundGradient = isDark
-        ? AppGradients.darkBackground
-        : const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFDFBFF),
-              Color(0xFFEFE8F4),
-            ],
-          );
+    final ThemeController themeController = ThemeControllerProvider.of(context);
+    final LinearGradient backgroundGradient =
+        isDark
+            ? AppGradients.darkBackground
+            : const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFDFBFF), Color(0xFFEFE8F4)],
+            );
     final Color onSurface = theme.colorScheme.onSurface;
     final Color mutedText =
         theme.textTheme.bodyMedium?.color?.withOpacity(0.7) ??
-            onSurface.withOpacity(0.7);
+        onSurface.withOpacity(0.7);
     final Color cardColor =
         isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
 
@@ -298,7 +307,10 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
           Container(
             decoration: BoxDecoration(gradient: backgroundGradient),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 100),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 100,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -315,6 +327,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             height: 1.3,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -361,7 +374,12 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                 child: Container(
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: isDark ? theme.colorScheme.primary.withOpacity(0.6) : theme.colorScheme.primary.withOpacity(0.7),
+                                    color:
+                                        isDark
+                                            ? theme.colorScheme.primary
+                                                .withOpacity(0.6)
+                                            : theme.colorScheme.primary
+                                                .withOpacity(0.7),
                                     borderRadius: BorderRadius.circular(24),
                                   ),
                                 ),
@@ -381,9 +399,10 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                       child: Center(
                                         child: Text(
                                           'Giriş Yap',
-                                          style: theme.textTheme.bodyLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                       ),
                                     ),
@@ -401,9 +420,10 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                                       child: Center(
                                         child: Text(
                                           'Kayıt Ol',
-                                          style: theme.textTheme.bodyLarge?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: theme.textTheme.bodyLarge
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
                                         ),
                                       ),
                                     ),
@@ -465,8 +485,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                       obscureText: _obscureConfirmPassword,
                       onTogglePassword: () {
                         setState(() {
-                          _obscureConfirmPassword =
-                              !_obscureConfirmPassword;
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
                         });
                       },
                     ),
@@ -540,29 +559,36 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                     width: double.infinity,
                     height: 55,
                     child: ElevatedButton(
-                      onPressed: isLoading
-                          ? null
-                          : () async {
-                              if (isLogin) {
-                                await _handleLoginNavigation();
-                              } else {
-                                await _signUp();
-                              }
-                            },
+                      onPressed:
+                          isLoading
+                              ? null
+                              : () async {
+                                if (isLogin) {
+                                  await _handleLoginNavigation();
+                                } else {
+                                  await _signUp();
+                                }
+                              },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? theme.colorScheme.primary.withOpacity(0.6) : theme.colorScheme.primary.withOpacity(0.9),
+                        backgroundColor:
+                            isDark
+                                ? theme.colorScheme.primary.withOpacity(0.6)
+                                : theme.colorScheme.primary.withOpacity(0.9),
                         foregroundColor: theme.colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(27.5),
                         ),
                         elevation: 0,
-                        disabledBackgroundColor:
-                            theme.colorScheme.primary.withOpacity(0.5),
+                        disabledBackgroundColor: theme.colorScheme.primary
+                            .withOpacity(0.5),
                       ),
                       child: Text(
                         isLogin ? 'Giriş Yap' : 'Kayıt Ol',
-                        style: const TextStyle(color: Colors.white,
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -581,7 +607,9 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
                               child: Text(
                                 'veya',
                                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -692,9 +720,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
           if (isLoading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
@@ -714,9 +740,8 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color fillColor =
         isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.1)
-        : Colors.black.withOpacity(0.05);
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
     final Color iconColor =
         theme.iconTheme.color?.withOpacity(0.5) ?? Colors.grey;
 
@@ -737,11 +762,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
             color: theme.textTheme.bodyMedium?.color?.withOpacity(0.45),
             fontSize: 15,
           ),
-          prefixIcon: Icon(
-            icon,
-            color: iconColor,
-            size: 20,
-          ),
+          prefixIcon: Icon(icon, color: iconColor, size: 20),
           suffixIcon:
               isPassword
                   ? IconButton(
@@ -772,11 +793,9 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
     final bool isDark = theme.brightness == Brightness.dark;
     final Color containerColor =
         isDark ? Colors.white.withOpacity(0.08) : theme.colorScheme.surface;
-    final Color borderColor = isDark
-        ? Colors.white.withOpacity(0.25)
-        : Colors.black.withOpacity(0.2);
-    final Color iconColor =
-        theme.iconTheme.color ?? theme.colorScheme.primary;
+    final Color borderColor =
+        isDark ? Colors.white.withOpacity(0.25) : Colors.black.withOpacity(0.2);
+    final Color iconColor = theme.iconTheme.color ?? theme.colorScheme.primary;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
@@ -787,10 +806,7 @@ class _LoginpageScreenState extends State<LoginpageScreen> {
           decoration: BoxDecoration(
             color: containerColor,
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(
-              color: borderColor,
-              width: 2,
-            ),
+            border: Border.all(color: borderColor, width: 2),
           ),
           child: Material(
             color: Colors.transparent,

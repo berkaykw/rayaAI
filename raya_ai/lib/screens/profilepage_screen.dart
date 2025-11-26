@@ -31,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String? userName;
   String? userEmail;
+  String userTier = 'free'; // 'free' veya 'premium'
   bool isLoading = true;
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
@@ -88,9 +89,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final prefs = await SharedPreferences.getInstance();
         final imagePath = prefs.getString('profile_image_path_${user.id}');
 
+        // Abonelik bilgisini çek
+        String tier = 'premium';
+        try {
+          final response =
+              await supabase
+                  .from('user_subscriptions')
+                  .select('tier')
+                  .eq('user_id', user.id)
+                  .eq('is_active', true)
+                  .maybeSingle();
+
+          // TEST İÇİN MANUEL AYARLAMA (AnalysisScreen ile aynı mantık)
+          tier = response?['tier'] ?? 'free';
+        } catch (_) {
+          tier = 'premium';
+        }
+
         setState(() {
           userEmail = user.email;
           userName = user.userMetadata?['user_name'] ?? 'User';
+          userTier = tier;
           if (imagePath != null && File(imagePath).existsSync()) {
             _profileImage = File(imagePath);
           }
@@ -103,6 +122,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
       });
       _showError('Failed to load user data');
     }
+  }
+
+  Widget _buildPlanBadge() {
+    bool isPremium = userTier == 'premium';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color:
+            isPremium
+                ? const Color(0xFFE23F75).withOpacity(0.1)
+                : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isPremium) ...[
+            const Icon(
+              Icons.workspace_premium,
+              color: Color(0xFFE23F75),
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            isPremium ? 'Premium Üye' : 'Free Üye',
+            style: TextStyle(
+              color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _signOut() async {
@@ -888,6 +947,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               letterSpacing: 0.2,
             ),
           ),
+
+          SizedBox(height: 12),
+
+          _buildPlanBadge(),
         ],
       ),
     );

@@ -29,7 +29,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final ImagePicker _picker = ImagePicker();
 
   String? userName;
-  String userTier = 'free'; // 'free' veya 'premium'
+  String userTier = 'premium'; // 'free' veya 'premium'
 
   String? _statusMessage;
   SkinAnalysisResult? _analysisResult;
@@ -103,13 +103,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     if (user == null) return;
 
     try {
-      final response =
-          await Supabase.instance.client
-              .from('user_subscriptions')
-              .select('tier')
-              .eq('user_id', user.id)
-              .eq('is_active', true)
-              .maybeSingle();
+      // final response =
+      //     await Supabase.instance.client
+      //         .from('user_subscriptions')
+      //         .select('tier')
+      //         .eq('user_id', user.id)
+      //         .eq('is_active', true)
+      //         .maybeSingle();
 
       if (!mounted) return;
       setState(() {
@@ -699,6 +699,46 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     );
   }
 
+  Widget _buildPlanBadge() {
+    bool isPremium = userTier == 'premium';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color:
+            isPremium
+                ? const Color(0xFFE23F75).withOpacity(0.1)
+                : Colors.grey.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isPremium) ...[
+            const Icon(
+              Icons.workspace_premium,
+              color: Color(0xFFE23F75),
+              size: 12,
+            ),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            isPremium ? 'Premium' : 'Free',
+            style: TextStyle(
+              color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -727,17 +767,23 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                       .min, // Sadece gerektiği kadar yer kapla
                               children: [
                                 // 1. Kısım: "Merhaba," (Soluk ve Zarif)
-                                Text(
-                                  'Merhaba,',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    height: 1.2,
-                                    color: _primaryTextColor.withOpacity(
-                                      0.7,
-                                    ), // Soluk renk
-                                    fontWeight: FontWeight.w400,
-                                    fontFamily: 'Poppins',
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Merhaba,',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        height: 1.2,
+                                        color: _primaryTextColor.withOpacity(
+                                          0.7,
+                                        ), // Soluk renk
+                                        fontWeight: FontWeight.w400,
+                                        fontFamily: 'Poppins',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _buildPlanBadge(),
+                                  ],
                                 ),
                                 const SizedBox(height: 4),
                                 ShaderMask(
