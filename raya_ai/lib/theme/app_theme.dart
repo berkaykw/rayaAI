@@ -20,19 +20,13 @@ class AppGradients {
   static const LinearGradient darkBackground = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      AppColors.darkBackgroundTop,
-      AppColors.darkBackgroundBottom,
-    ],
+    colors: [AppColors.darkBackgroundTop, AppColors.darkBackgroundBottom],
   );
 
   static const LinearGradient darkCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF23232A),
-      Color(0xFF15151A),
-    ],
+    colors: [Color(0xFF23232A), Color(0xFF15151A)],
   );
 }
 
@@ -63,22 +57,18 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: AppColors.darkText),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.white.withOpacity(0.08),
-          ),
+          side: BorderSide(color: Colors.white.withOpacity(0.08)),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.pinkPrimary.withOpacity(0.2),
         selectedColor: AppColors.pinkPrimary,
         labelStyle: const TextStyle(color: AppColors.darkText),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       textTheme: const TextTheme(
         bodyLarge: TextStyle(color: AppColors.darkText),
@@ -114,24 +104,20 @@ class AppTheme {
         ),
         iconTheme: IconThemeData(color: AppColors.lightText),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.lightSurface,
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: Colors.black.withOpacity(0.04),
-          ),
+          side: BorderSide(color: Colors.black.withOpacity(0.04)),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.pinkPrimary.withOpacity(0.12),
         selectedColor: AppColors.pinkPrimary,
         labelStyle: const TextStyle(color: AppColors.lightText),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       textTheme: const TextTheme(
         bodyLarge: TextStyle(color: AppColors.lightText),
@@ -141,4 +127,3 @@ class AppTheme {
     );
   }
 }
-
