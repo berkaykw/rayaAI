@@ -29,7 +29,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   final ImagePicker _picker = ImagePicker();
 
   String? userName;
-  String userTier = 'premium'; // 'free' veya 'premium'
+  String userTier = 'free'; // 'free' veya 'premium'
 
   String? _statusMessage;
   SkinAnalysisResult? _analysisResult;
@@ -47,7 +47,6 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   bool _isAksamRutiniExpanded = false;
   bool _isMakyajOnerileriExpanded = false;
   bool _isNotlarIpuclariExpanded = false;
-  bool _isKapanisNotuExpanded = false;
   bool _isUrunOnerileriExpanded = false;
 
   // Tema kontrolü
@@ -700,41 +699,53 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
   }
 
   Widget _buildPlanBadge() {
-    bool isPremium = userTier == 'premium';
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    final bool isPremium = userTier == 'premium';
+
+    // Renk paleti
+    final Color primaryColor =
+        isPremium
+            ? const Color(0xFFE23F75) // Premium pembe
+            : const Color(0xFF8E8E93); // Free gri
+
+    final Color secondaryColor =
+        isPremium
+            ? const Color(0xFFFF6B9D) // Premium açık pembe
+            : const Color(0xFFAEAEB2); // Free açık gri
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color:
-            isPremium
-                ? const Color(0xFFE23F75).withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isPremium) ...[
-            const Icon(
-              Icons.workspace_premium,
-              color: Color(0xFFE23F75),
-              size: 12,
-            ),
-            const SizedBox(width: 4),
+        gradient: LinearGradient(
+          colors: [
+            primaryColor.withOpacity(0.18),
+            secondaryColor.withOpacity(0.10),
           ],
-          Text(
-            isPremium ? 'Premium' : 'Free',
-            style: TextStyle(
-              color: isPremium ? const Color(0xFFE23F75) : Colors.grey,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow:
+            isPremium
+                ? [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.15),
+                    blurRadius: 8,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                : null,
+      ),
+      child: Text(
+        isPremium ? 'Premium' : 'Free',
+        style: TextStyle(
+          color: primaryColor,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
@@ -2564,21 +2575,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           ),
         SizedBox(height: 12),
 
-        // Kapanış Notu - GENİŞLETİLEBİLİR
+        // Kapanış Notu - DİREKT METİN
         if (result.kapanisNotu != null)
-          _buildExpandableRoutineCard(
+          _buildAnalysisCard(
             title: 'Kapanış',
             icon: Icons.favorite,
-            gradient: [
-              Colors.pink.withOpacity(0.3),
-              Colors.pinkAccent.withOpacity(0.2),
-            ],
-            isExpanded: _isKapanisNotuExpanded,
-            onTap: () {
-              setState(() {
-                _isKapanisNotuExpanded = !_isKapanisNotuExpanded;
-              });
-            },
             content: result.kapanisNotu!,
           ),
       ],
@@ -2743,13 +2744,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: glowColor,
-                    blurRadius: 18,
-                    spreadRadius: -3,
-                    offset: const Offset(0, 8),
+                    blurRadius: 12,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
@@ -2758,7 +2759,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
           // --- KART GÖVDESİ ---
           ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
                 // 1. Blur
@@ -2773,7 +2774,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 // 2. Dekorasyon ve İçerik
                 Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     color: _isDarkTheme ? null : glassCardBg,
                     gradient:
                         _isDarkTheme
@@ -2841,19 +2842,19 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                             child: InkWell(
                               onTap: onTap,
                               borderRadius: BorderRadius.vertical(
-                                top: const Radius.circular(24),
+                                top: const Radius.circular(20),
                                 bottom:
                                     isExpanded
                                         ? Radius.zero
-                                        : const Radius.circular(24),
+                                        : const Radius.circular(20),
                               ),
                               child: Padding(
-                                padding: const EdgeInsets.all(20.0),
+                                padding: const EdgeInsets.all(16.0),
                                 child: Row(
                                   children: [
                                     // İkon
                                     Container(
-                                      padding: const EdgeInsets.all(10),
+                                      padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color:
                                             _isDarkTheme ? null : glassAccent,
@@ -2863,15 +2864,15 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                                   colors: [accent, accent2],
                                                 )
                                                 : null,
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Icon(
                                         icon,
                                         color: Colors.white,
-                                        size: 24,
+                                        size: 20,
                                       ),
                                     ),
-                                    const SizedBox(width: 14),
+                                    const SizedBox(width: 12),
 
                                     // Başlık Metni
                                     Expanded(
@@ -2884,14 +2885,14 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                             title,
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontSize: 20,
+                                              fontSize: 17,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          const SizedBox(height: 4),
+                                          const SizedBox(height: 3),
                                           Container(
-                                            height: 3,
-                                            width: 40,
+                                            height: 2,
+                                            width: 32,
                                             decoration: BoxDecoration(
                                               color:
                                                   _isDarkTheme
@@ -2931,7 +2932,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                         child: const Icon(
                                           Icons.keyboard_arrow_down_rounded,
                                           color: Colors.white,
-                                          size: 24,
+                                          size: 20,
                                         ),
                                       ),
                                     ),
@@ -2952,7 +2953,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                         color: contentBackground,
                                         borderRadius:
                                             const BorderRadius.vertical(
-                                              bottom: Radius.circular(24),
+                                              bottom: Radius.circular(20),
                                             ),
                                         border: Border(
                                           top: BorderSide(
@@ -2967,15 +2968,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                           ),
                                         ),
                                       ),
-                                      padding: const EdgeInsets.all(20),
-                                      child: Text(
+                                      padding: const EdgeInsets.all(16),
+                                      child: _buildFormattedContent(
                                         content,
-                                        style: TextStyle(
-                                          color: contentTextColor,
-                                          fontSize: 15,
-                                          height: 1.6,
-                                          letterSpacing: 0.3,
-                                        ),
+                                        contentTextColor,
                                       ),
                                     )
                                     : const SizedBox.shrink(),
@@ -3117,6 +3113,93 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
     return buffer.toString().trim();
   }
 
+  /// İçerik metnini formatlanmış şekilde gösterir
+  /// Emoji ile başlayan satırlar kalın başlık olarak gösterilir
+  Widget _buildFormattedContent(String content, Color textColor) {
+    final lines = content.split('\n');
+    final List<Widget> widgets = [];
+
+    // Emoji pattern - başlık satırlarını tespit etmek için
+    final emojiPattern = RegExp(
+      r'^[\p{Emoji}\p{Emoji_Presentation}\p{Extended_Pictographic}]',
+      unicode: true,
+    );
+    final numberEmojiPattern = RegExp(r'^[0-9]️⃣|^[1-9]\.|^•');
+
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) {
+        widgets.add(const SizedBox(height: 8));
+        continue;
+      }
+
+      // Emoji veya numara ile başlayan başlık satırları
+      bool isHeader =
+          emojiPattern.hasMatch(line) &&
+          (line.endsWith(':') || !line.contains('•'));
+      bool isNumberedStep =
+          numberEmojiPattern.hasMatch(line) && !line.startsWith('•');
+      bool isBulletPoint = line.startsWith('•');
+
+      if (isHeader || isNumberedStep) {
+        // Başlık veya adım - kalın ve biraz büyük
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.only(top: i > 0 ? 12 : 0, bottom: 4),
+            child: Text(
+              line,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                height: 1.4,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+        );
+      } else if (isBulletPoint) {
+        // Bullet point - normal ağırlık, hafif indent
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 2, bottom: 2),
+            child: Text(
+              line,
+              style: TextStyle(
+                color: textColor.withOpacity(0.9),
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+              ),
+            ),
+          ),
+        );
+      } else {
+        // Normal metin
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 2),
+            child: Text(
+              line,
+              style: TextStyle(
+                color: textColor.withOpacity(0.85),
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
   Widget _buildAnalysisCard({
     required String title,
     required String content,
@@ -3139,24 +3222,24 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
             : Colors.pink.shade400.withOpacity(0.2);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Stack(
         children: [
           // --- HAFİF GÖLGE EFEKTİ ---
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: glowColor,
-                    blurRadius: 18,
-                    spreadRadius: -3,
-                    offset: const Offset(0, 8),
+                    blurRadius: 12,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 6),
                   ),
                   BoxShadow(
-                    color: glowColor.withOpacity(_isDarkTheme ? 0.05 : 0.1),
-                    blurRadius: 30,
+                    color: glowColor.withOpacity(_isDarkTheme ? 0.05 : 0.08),
+                    blurRadius: 20,
                     spreadRadius: 0,
                     offset: const Offset(0, 0),
                   ),
@@ -3167,7 +3250,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
           // --- ANA KART ---
           ClipRRect(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
                 // 1. Blur (Sadece Açık Mod)
@@ -3182,7 +3265,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                 // 2. Kart Yapısı ve Zemin Rengi
                 Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(20),
                     color: _isDarkTheme ? null : glassCardBg,
                     gradient:
                         _isDarkTheme
@@ -3230,7 +3313,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(20),
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft, // Sol üstten
                                 end: Alignment.bottomRight, // Sağ alta doğru
@@ -3249,7 +3332,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                       // --- İÇERİK ---
                       Padding(
-                        padding: const EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -3257,7 +3340,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                               children: [
                                 // İkon Kutusu
                                 Container(
-                                  padding: const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: _isDarkTheme ? null : glassAccent,
                                     gradient:
@@ -3268,7 +3351,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                               end: Alignment.bottomRight,
                                             )
                                             : null,
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(10),
                                     boxShadow: [
                                       BoxShadow(
                                         color:
@@ -3284,10 +3367,10 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                   child: Icon(
                                     icon,
                                     color: Colors.white,
-                                    size: 24,
+                                    size: 20,
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -3298,7 +3381,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                         title,
                                         style: TextStyle(
                                           color: Colors.white,
-                                          fontSize: 20,
+                                          fontSize: 17,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 0.5,
                                           shadows: [
@@ -3312,11 +3395,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      const SizedBox(height: 3),
                                       // Alt Çizgi
                                       Container(
-                                        height: 3,
-                                        width: 40,
+                                        height: 2,
+                                        width: 32,
                                         decoration: BoxDecoration(
                                           color:
                                               _isDarkTheme ? null : glassAccent,
@@ -3340,13 +3423,13 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 
                             // Metin Kutusu
                             Container(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
                                 color:
                                     _isDarkTheme
                                         ? Colors.black.withOpacity(0.2)
                                         : glassContentBoxBg,
-                                borderRadius: BorderRadius.circular(16),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color:
                                       _isDarkTheme
@@ -3355,17 +3438,11 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
                                   width: 1,
                                 ),
                               ),
-                              child: Text(
+                              child: _buildFormattedContent(
                                 content,
-                                style: TextStyle(
-                                  color:
-                                      _isDarkTheme
-                                          ? Colors.white.withOpacity(0.9)
-                                          : Colors.black87,
-                                  fontSize: 15,
-                                  height: 1.6,
-                                  letterSpacing: 0.3,
-                                ),
+                                _isDarkTheme
+                                    ? Colors.white.withOpacity(0.9)
+                                    : Colors.black87,
                               ),
                             ),
                           ],
